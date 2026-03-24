@@ -21,7 +21,7 @@ export default function ProgressBar({
       {showText && (
         <div className="flex justify-between items-center text-[10px] sm:text-xs font-label uppercase tracking-widest text-[#adaaaa] px-1 font-semibold">
           <span>PROGRESS</span>
-          <span>{value}%</span>
+          <span>{value.toFixed(2)}%</span>
         </div>
       )}
       <div className="h-[14px] w-full bg-[#1e1e1e] rounded-full overflow-hidden relative">

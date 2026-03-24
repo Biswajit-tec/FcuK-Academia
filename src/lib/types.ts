@@ -12,6 +12,11 @@ export interface Subject {
   marks: {
     internal: number;
     totalInternal: number;
+    exams: {
+      exam: string;
+      obtained: number | null;
+      maxMark: number | null;
+    }[];
     grade?: string;
   };
 }

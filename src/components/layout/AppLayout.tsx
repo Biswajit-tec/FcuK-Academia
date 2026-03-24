@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 
 const HIDE_NAV_PATHS = ['/login'];
-const SWIPEABLE_PATHS = ['/', '/marks', '/attendance', '/timetable', '/calendar'] as const;
+const SWIPEABLE_PATHS = ['/', '/marks', '/attendance', '/timetable', '/calendar', '/settings'] as const;
 const SWIPE_THRESHOLD = 72;
 const SWIPE_VELOCITY_THRESHOLD = 0.35;
 

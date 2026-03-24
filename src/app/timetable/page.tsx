@@ -26,7 +26,7 @@ export default function TimetablePage() {
           <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
             <Image src={avatarUrl} alt="Profile" fill className="object-cover" unoptimized />
           </div>
-          <span className="font-headline font-bold text-xl text-primary tracking-tighter lowercase">fcuk academia</span>
+          <span className="font-headline normal-case font-bold text-xl text-primary tracking-tighter">FucK Academia</span>
         </div>
         <Bell className="text-primary w-6 h-6" />
       </header>
@@ -38,11 +38,10 @@ export default function TimetablePage() {
             <button
               key={num}
               onClick={() => setSelectedDayOrder(num)}
-              className={`w-11 h-11 rounded-full font-headline text-xl font-bold flex items-center justify-center transition-all ${
-                dayOrder === num
+              className={`w-11 h-11 rounded-full font-headline text-xl font-bold flex items-center justify-center transition-all ${dayOrder === num
                   ? 'bg-[#e0eab0] text-[#1c1b18] shadow-[0_0_15px_rgba(224,234,176,0.4)]'
                   : 'border-2 border-[#3a3a3a] text-[#808080] hover:border-white/20'
-              }`}
+                }`}
             >
               {num}
             </button>

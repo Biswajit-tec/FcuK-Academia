@@ -17,7 +17,6 @@ const URLS = {
   profile: '/srm_university/academia-academic-services/page/My_Time_Table_2023_24',
   attendance: '/srm_university/academia-academic-services/page/My_Attendance',
   gridBase: '/srm_university/academia-academic-services/page/Unified_Time_Table_2025',
-  planner: '/srm_university/academia-academic-services/page/Academic_Planner_2025_26_EVEN',
 } as const;
 
 export type SessionCookies = Record<string, string>;
@@ -245,6 +244,48 @@ async function fetchAcademiaPage(path: string, sessionSource: SessionCookies | S
     html: extractDecodedHtml(rawHtml),
     cookies: await jarToCookies(session.jar),
     session,
+  };
+}
+
+function getPlannerCandidates(referenceDate = new Date()) {
+  const basePath = '/srm_university/academia-academic-services/page';
+  const currentYear = referenceDate.getFullYear();
+  const candidates = new Set<string>([
+    `${basePath}/Academic_Planner`,
+  ]);
+
+  for (let startYear = currentYear - 2; startYear <= currentYear + 1; startYear += 1) {
+    const shortEndYear = String(startYear + 1).slice(-2);
+    for (const term of ['EVEN', 'ODD']) {
+      candidates.add(`${basePath}/Academic_Planner_${startYear}_${shortEndYear}_${term}`);
+      candidates.add(`${basePath}/Academic_Planner_${startYear}_${startYear + 1}_${term}`);
+    }
+  }
+
+  return [...candidates];
+}
+
+async function fetchPlannerCalendar(sessionSource: SessionCookies | SessionContainer) {
+  let latestPage: Awaited<ReturnType<typeof fetchAcademiaPage>> | null = null;
+
+  for (const candidate of getPlannerCandidates()) {
+    const page = await fetchAcademiaPage(candidate, sessionSource);
+    latestPage = page;
+
+    if (!page.html) continue;
+
+    const calendar = parseCalendar(page.html);
+    if (calendar.length) {
+      return {
+        page,
+        calendar,
+      };
+    }
+  }
+
+  return {
+    page: latestPage ?? await fetchAcademiaPage('/srm_university/academia-academic-services/page/Academic_Planner', sessionSource),
+    calendar: [] as RawCalendarMonth[],
   };
 }
 
@@ -767,48 +808,95 @@ function parseTimetable(htmlContent: string | null, courseMap: Map<string, RawCo
 
 function parseCalendar(htmlContent: string | null): RawCalendarMonth[] {
   if (!htmlContent) return [];
-  const tableMatch = htmlContent.match(/<table[^>]*>[\s\S]*?<\/table>/i);
-  if (!tableMatch?.[0]) return [];
+  const $ = cheerio.load(htmlContent);
+  const monthPattern = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*'?\s*(\d{2,4})/i;
+  const dayOrderPattern = /^(?:day\s*)?([1-5])$/i;
 
-  const tableHtml = tableMatch[0];
-  const decodeCell = (cellHtml: string) => cleanText(cheerio.load(`<div>${cellHtml}</div>`)('div').text());
-  const rowMatches = [...tableHtml.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
-  if (!rowMatches.length) return [];
+  for (const table of $('table').toArray()) {
+    const rows = $(table).find('tr').toArray();
+    if (rows.length < 2) continue;
 
-  const monthHeaders = [...rowMatches[0][1].matchAll(/>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*'?\s*(\d{2})</gi)]
-    .map((match) => `${match[1]} '${match[2]}`);
-  if (!monthHeaders.length) return [];
+    const headerCells = $(rows[0]).find('th, td').toArray();
+    const monthHeaders = headerCells
+      .map((cell) => cleanText($(cell).text()))
+      .map((text) => {
+        const match = text.match(monthPattern);
+        if (!match) return null;
+        const yearText = match[2];
+        return `${match[1]} '${yearText.slice(-2)}`;
+      })
+      .filter((value): value is string => Boolean(value));
 
-  const months: RawCalendarMonth[] = monthHeaders.map((month) => ({ month, days: [] }));
+    if (!monthHeaders.length) continue;
 
-  for (const rowMatch of rowMatches.slice(1)) {
-    const cells = [...rowMatch[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((match) => decodeCell(match[1]));
-    if (!cells.length) continue;
+    const months: RawCalendarMonth[] = monthHeaders.map((month) => ({ month, days: [] }));
 
-    for (let blockIndex = 0; blockIndex < monthHeaders.length; blockIndex += 1) {
-      const start = blockIndex * 5;
-      if (start + 3 >= cells.length) continue;
+    for (const row of rows.slice(1)) {
+      const cells = $(row)
+        .find('td, th')
+        .toArray()
+        .map((cell) => cleanText($(cell).text()));
+      if (!cells.length) continue;
 
-      const date = cleanText(cells[start]);
-      if (!/^\d+$/.test(date)) continue;
+      const blockSize = Math.max(4, Math.floor(cells.length / monthHeaders.length));
 
-      months[blockIndex]?.days.push({
-        date,
-        day: cleanText(cells[start + 1]),
-        event: cleanText(cells[start + 2]),
-        dayOrder: cleanText(cells[start + 3]) || '-',
-      });
+      for (let blockIndex = 0; blockIndex < monthHeaders.length; blockIndex += 1) {
+        const start = blockIndex * blockSize;
+        if (start + 3 >= cells.length) continue;
+
+        const date = cleanText(cells[start]);
+        if (!/^\d+$/.test(date)) continue;
+
+        const blockCells = cells.slice(start, Math.min(start + blockSize, cells.length));
+        const day = cleanText(blockCells[1]);
+        const payloadCells = blockCells
+          .slice(2)
+          .map((value) => cleanText(value))
+          .filter(Boolean);
+
+        let dayOrder = '-';
+        const eventParts: string[] = [];
+
+        for (const value of payloadCells) {
+          if (!value || value === '-') continue;
+
+          const dayOrderMatch = value.match(dayOrderPattern);
+          if (dayOrderMatch?.[1]) {
+            dayOrder = dayOrderMatch[1];
+            continue;
+          }
+
+          if (/^(?:nan|null|nil|na)$/i.test(value)) continue;
+          eventParts.push(value);
+        }
+
+        const joinedEvent = cleanText(eventParts.join(' • '));
+        const inferredEvent = !joinedEvent && /^sat/i.test(day) ? 'Holiday' : '';
+
+        months[blockIndex]?.days.push({
+          date,
+          day,
+          event: joinedEvent || inferredEvent || '-',
+          dayOrder,
+        });
+      }
+    }
+
+    const filteredMonths = months
+      .map((month) => ({
+        ...month,
+        days: month.days.filter((day, index, array) =>
+          array.findIndex((item) => item.date === day.date) === index,
+        ),
+      }))
+      .filter((month) => month.days.length > 0);
+
+    if (filteredMonths.length) {
+      return filteredMonths;
     }
   }
 
-  return months
-    .map((month) => ({
-      ...month,
-      days: month.days.filter((day, index, array) =>
-        array.findIndex((item) => item.date === day.date) === index,
-      ),
-    }))
-    .filter((month) => month.days.length > 0);
+  return [];
 }
 
 async function getProfileAndCourses(cookies: SessionCookies) {
@@ -868,10 +956,10 @@ export async function getDashboardData(cookies: SessionCookies) {
   }
 
   const batch = String(userInfo.batch).toLowerCase().trim() === '1' ? 'Batch_1' : 'batch_2';
-  const [attendancePage, gridPage, plannerPage] = await Promise.all([
+  const [attendancePage, gridPage, plannerResult] = await Promise.all([
     fetchAcademiaPage(URLS.attendance, session),
     fetchAcademiaPage(`${URLS.gridBase}_${batch}`, session),
-    fetchAcademiaPage(URLS.planner, session),
+    fetchPlannerCalendar(session),
   ]);
 
   return {
@@ -879,8 +967,8 @@ export async function getDashboardData(cookies: SessionCookies) {
     attendance: parseAttendance(attendancePage.html, courseMap),
     markList: parseMarks(attendancePage.html),
     timetable: parseTimetable(gridPage.html, courseMap),
-    calendar: parseCalendar(plannerPage.html),
-    cookies: plannerPage.cookies,
+    calendar: plannerResult.calendar,
+    cookies: plannerResult.page.cookies,
     status: attendancePage.html ? 200 : 401,
     error: attendancePage.html ? undefined : 'session expired',
   };
@@ -948,13 +1036,12 @@ export async function getTimetable(cookies: SessionCookies) {
 }
 
 export async function getCalendar(cookies: SessionCookies) {
-  const plannerPage = await fetchAcademiaPage(URLS.planner, cookies);
-  const calendar = parseCalendar(plannerPage.html);
+  const plannerResult = await fetchPlannerCalendar(cookies);
   return {
-    calendar,
-    cookies: plannerPage.cookies,
-    status: plannerPage.html ? 200 : 401,
-    error: plannerPage.html ? undefined : 'session expired',
+    calendar: plannerResult.calendar,
+    cookies: plannerResult.page.cookies,
+    status: plannerResult.page.html ? 200 : 401,
+    error: plannerResult.page.html ? undefined : 'session expired',
   };
 }
 

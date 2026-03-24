@@ -16,6 +16,21 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
   const marksPct = subject.marks.totalInternal > 0
     ? (subject.marks.internal / subject.marks.totalInternal) * 100
     : 0;
+  const examBoxes = [...subject.marks.exams]
+    .sort((a, b) => {
+      if (a.obtained === null && b.obtained !== null) return 1;
+      if (a.obtained !== null && b.obtained === null) return -1;
+      return 0;
+    })
+    .slice(0, 3);
+
+  while (examBoxes.length < 3) {
+    examBoxes.push({
+      exam: 'TBA',
+      obtained: null,
+      maxMark: null,
+    });
+  }
   const attendanceMargin = Math.floor((subject.attendance.attended / 0.75) - subject.attendance.total);
   const attendanceRequired = Math.ceil((0.75 * subject.attendance.total - subject.attendance.attended) / 0.25);
   const attendancePillClass = attPct < 75
@@ -77,17 +92,35 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
               {subject.credits} CREDITS
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex gap-1">
-              <div className="w-3 h-3 bg-primary rounded-[2px]" />
-              <div className="w-3 h-3 bg-primary rounded-[2px]" />
-              <div className="w-3 h-3 bg-primary rounded-[2px]" />
-            </div>
-            <span className="font-label text-xs tracking-widest text-[#adaaaa] uppercase">INTERNALS: {subject.marks.internal}/{subject.marks.totalInternal}</span>
+          <div className="grid grid-cols-3 gap-3">
+            {examBoxes.map((exam, index) => {
+              const isPending = exam.obtained === null || exam.maxMark === null;
+              return (
+                <div
+                  key={`${exam.exam}-${index}`}
+                  className={cn(
+                    'min-w-0 rounded-[18px] border px-2 py-3 text-center',
+                    isPending
+                      ? 'border-dashed border-white/14 bg-transparent'
+                      : 'border-primary/30 bg-primary/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_0_22px_rgba(182,255,0,0.08)]',
+                  )}
+                >
+                  <p className={cn('font-label text-[10px] font-bold tracking-widest uppercase', isPending ? 'text-[#6f6f6f]' : 'text-primary/70')}>{exam.exam}</p>
+                  {isPending ? (
+                    <p className="mt-3 font-headline text-[1.5rem] font-bold leading-none tracking-tighter text-[#6f6f6f]">TBA</p>
+                  ) : (
+                    <div className="mt-2 flex flex-col items-center">
+                      <p className="font-headline text-[1.4rem] font-bold leading-none tracking-tighter text-primary">{exam.obtained?.toFixed(2)}</p>
+                      <p className="mt-1 font-label text-[10px] font-bold tracking-widest text-primary/70">/ {exam.maxMark?.toFixed(2)}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <ProgressBar value={marksPct} color={hexColor} />
           <div className="text-right mt-2">
-            <span className="font-headline text-6xl font-bold tracking-tighter text-white inline-block">{subject.marks.internal.toFixed(1)}</span>
+            <span className="font-headline text-6xl font-bold tracking-tighter text-white inline-block">{subject.marks.internal.toFixed(2)}</span>
           </div>
         </>
       )}

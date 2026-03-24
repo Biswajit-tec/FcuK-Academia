@@ -79,6 +79,11 @@ export function combineSubjects(attendance: RawAttendanceItem[], marks: RawMarkI
       marks: {
         internal: mark?.total.obtained ?? 0,
         totalInternal: mark?.total.maxMark ?? 0,
+        exams: mark?.marks.map((exam) => ({
+          exam: exam.exam,
+          obtained: Number.isFinite(exam.obtained) ? exam.obtained : null,
+          maxMark: Number.isFinite(exam.maxMark) ? exam.maxMark : null,
+        })) ?? [],
         grade: undefined,
       },
     };
@@ -96,6 +101,12 @@ export function getAverageMarks(marks: RawMarkItem[]) {
   if (!valid.length) return 0;
   const sum = valid.reduce((acc, item) => acc + item.total.obtained, 0);
   return sum / valid.length;
+}
+
+export function getTotalMarks(marks: RawMarkItem[]) {
+  return marks
+    .filter((item) => item.total.maxMark > 0)
+    .reduce((acc, item) => acc + item.total.obtained, 0);
 }
 
 export function getMarksPercentage(marks: RawMarkItem[]) {

@@ -17,26 +17,16 @@ export function useCalendar() {
       try {
         setLoading((current) => current && !cachedDashboard);
         setError(null);
-        const data = await fetchJson<DashboardData>('/api/dashboard');
-        if (!active) return;
-        if (data.calendar.length) {
-          setCalendar(data.calendar);
-          return;
-        }
-
         const calendarData = await fetchJson<CalendarResponse>(`/api/calendar?ts=${Date.now()}`);
         if (!active) return;
         setCalendar(calendarData.calendar);
       } catch (err) {
         if (!active) return;
-        try {
-          const calendarData = await fetchJson<CalendarResponse>(`/api/calendar?ts=${Date.now()}`);
-          if (!active) return;
-          setCalendar(calendarData.calendar);
+        if (cachedDashboard?.calendar?.length) {
+          setCalendar(cachedDashboard.calendar);
           setError(null);
-        } catch (calendarErr) {
-          if (!active) return;
-          setError(calendarErr instanceof ApiError ? calendarErr.message : (err instanceof ApiError ? err.message : 'server error'));
+        } else {
+          setError(err instanceof ApiError ? err.message : 'server error');
         }
       } finally {
         if (active) setLoading(false);

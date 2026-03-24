@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getCachedDashboardData } from '@/lib/server/dashboard-cache';
+import { getCalendar } from '@/lib/server/academia';
 import { handleRouteError, requireSession } from '@/lib/server/route-utils';
 import { applySessionCookie } from '@/lib/server/session';
 
@@ -11,13 +11,13 @@ export async function GET() {
       return authResponse ?? NextResponse.json({ error: 'session expired' }, { status: 401 });
     }
 
-    const result = await getCachedDashboardData(sessionId, session);
-    if (!result.snapshot) {
-      return NextResponse.json({ error: 'session expired' }, { status: 401 });
+    const result = await getCalendar(session.cookies);
+    if (result.status !== 200) {
+      return NextResponse.json({ error: result.error ?? 'session expired' }, { status: result.status });
     }
 
-    const jsonResponse = NextResponse.json({ calendar: result.snapshot.calendar });
-    return result.session ? applySessionCookie(jsonResponse, result.session) : jsonResponse;
+    const jsonResponse = NextResponse.json({ calendar: result.calendar });
+    return applySessionCookie(jsonResponse, { ...session, cookies: result.cookies });
   } catch (error) {
     return handleRouteError(error);
   }
