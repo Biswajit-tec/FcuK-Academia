@@ -5,15 +5,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 
 import Navbar from '@/components/layout/Navbar';
+import IntroOverlay from '@/components/ui/IntroOverlay';
+import { useTheme } from '@/context/ThemeContext';
+import { getPageMotion } from '@/lib/motion';
 
 const HIDE_NAV_PATHS = ['/login'];
 const SWIPEABLE_PATHS = ['/', '/marks', '/attendance', '/timetable', '/calendar', '/settings'] as const;
-const SWIPE_THRESHOLD = 72;
-const SWIPE_VELOCITY_THRESHOLD = 0.35;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { themeConfig } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [navigationDirection, setNavigationDirection] = useState(0);
   const touchStartXRef = useRef(0);
@@ -63,17 +65,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const deltaY = touch.clientY - touchStartYRef.current;
     const elapsed = Math.max(1, performance.now() - touchStartTimeRef.current);
     const velocityX = Math.abs(deltaX / elapsed);
+    const swipeMotion = themeConfig.motion.swipe;
 
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD && velocityX < SWIPE_VELOCITY_THRESHOLD) return;
+    if (Math.abs(deltaX) < swipeMotion.threshold && velocityX < swipeMotion.velocityThreshold) return;
     if (Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
 
     navigateToDirection(deltaX < 0 ? 1 : -1);
   }
 
+  const pageMotion = getPageMotion(themeConfig.motion, navigationDirection);
+
   return (
-    <div className="relative min-h-screen pb-40 max-w-md mx-auto overflow-x-hidden">
+    <div className="relative mx-auto min-h-screen max-w-md overflow-x-hidden pb-40">
+      <IntroOverlay />
       {!mounted ? (
-        <main className="px-4 sm:px-6 pt-6 sm:pt-8">
+        <main className="px-4 pt-6 sm:px-6 sm:pt-8">
           {children}
         </main>
       ) : (
@@ -81,16 +87,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <motion.main
             key={pathname}
             custom={navigationDirection}
-            initial={{ opacity: 0, x: navigationDirection > 0 ? 28 : navigationDirection < 0 ? -28 : 0 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: navigationDirection > 0 ? -28 : navigationDirection < 0 ? 28 : 0 }}
-            transition={{
-              x: { type: 'spring', stiffness: 420, damping: 36, mass: 0.8 },
-              opacity: { duration: 0.18, ease: 'easeOut' },
-            }}
+            initial={pageMotion.initial}
+            animate={pageMotion.animate}
+            exit={pageMotion.exit}
+            transition={pageMotion.transition}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            className="min-h-[calc(100dvh-9.5rem)] px-4 sm:px-6 pt-6 sm:pt-8 touch-pan-y will-change-transform"
+            className="min-h-[calc(100dvh-9.5rem)] touch-pan-y px-4 pt-6 will-change-transform sm:px-6 sm:pt-8"
             style={{ touchAction: 'pan-y' }}
           >
             {children}

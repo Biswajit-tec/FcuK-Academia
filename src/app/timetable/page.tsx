@@ -9,6 +9,7 @@ import { PageReveal, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useTimetable } from '@/hooks/useTimetable';
 import { useUser } from '@/hooks/useUser';
 import { createAvatarUrl, getClassesForDay, getDayOrders } from '@/lib/academia-ui';
+import { cn } from '@/lib/utils';
 
 export default function TimetablePage() {
   const { timetableRaw, loading, error } = useTimetable();
@@ -23,25 +24,31 @@ export default function TimetablePage() {
     <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
+          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[color:var(--border)]">
             <Image src={avatarUrl} alt="Profile" fill className="object-cover" unoptimized />
           </div>
-          <span className="font-headline normal-case font-bold text-xl text-primary tracking-tighter">FucK Academia</span>
+          <span className="font-headline text-xl font-bold normal-case tracking-tight text-primary">FucK Academia</span>
         </div>
-        <Bell className="text-primary w-6 h-6" />
+        <Bell className="h-6 w-6 text-primary" />
       </header>
 
-      <RevealText className="flex items-center gap-6 mt-4 z-10 relative">
-        <span className="font-label text-[10px] font-bold tracking-widest text-[#adaaaa] uppercase">day order</span>
+      <RevealText className="relative z-10 mt-4 flex items-center gap-5">
+        <span className="theme-kicker">day order</span>
         <div className="flex gap-3">
           {(dayOrders.length ? dayOrders : [1, 2, 3, 4]).map((num) => (
             <button
               key={num}
+              type="button"
               onClick={() => setSelectedDayOrder(num)}
-              className={`w-11 h-11 rounded-full font-headline text-xl font-bold flex items-center justify-center transition-all ${dayOrder === num
-                  ? 'bg-[#e0eab0] text-[#1c1b18] shadow-[0_0_15px_rgba(224,234,176,0.4)]'
-                  : 'border-2 border-[#3a3a3a] text-[#808080] hover:border-white/20'
-                }`}
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-full border font-headline text-xl font-bold transition-all',
+                dayOrder === num ? 'text-[var(--text-inverse)] shadow-[var(--glow-primary)]' : 'text-on-surface-variant',
+              )}
+              style={
+                dayOrder === num
+                  ? { backgroundColor: 'var(--primary)', borderColor: 'var(--primary)' }
+                  : { background: 'color-mix(in srgb, var(--surface-soft) 92%, transparent)', borderColor: 'var(--border)' }
+              }
             >
               {num}
             </button>
@@ -50,49 +57,59 @@ export default function TimetablePage() {
       </RevealText>
 
       {error ? <p className="text-sm text-error font-body">{error}</p> : null}
-      <section className="relative mt-8">
-        <div className="absolute left-3 top-4 bottom-0 w-[1px] bg-gradient-to-b from-[#2a2a2a] to-transparent z-0" />
+      <section className="relative mt-2">
+        <div
+          className="absolute bottom-0 left-3 top-4 z-0 w-px"
+          style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--border-strong) 80%, transparent), transparent)' }}
+        />
 
-        <div className="flex flex-col gap-8 relative z-10">
+        <div className="relative z-10 flex flex-col gap-8">
           {loading ? (
-            [1, 2, 3].map((item) => <div key={item} className="h-36 rounded-[28px] bg-[#121212] animate-pulse ml-8" />)
+            [1, 2, 3].map((item) => <div key={item} className="ml-8 h-36 rounded-[28px] bg-surface animate-pulse" />)
           ) : classes.length ? (
             classes.map((item, index) => {
               const isPrimary = index === 2;
               const glow = index % 2 === 0 ? 'primary' : 'secondary';
+
               return (
-                <RevealItem key={`${item.slot}-${item.time}-${index}`} className="flex gap-6 relative">
+                <RevealItem key={`${item.slot}-${item.time}-${index}`} className="relative flex gap-6">
                   <div className="relative mt-6">
-                    <div className={`w-2.5 h-2.5 rounded-full z-10 relative ${glow === 'primary' ? 'shadow-[0_0_10px_var(--primary)] bg-primary' : 'shadow-[0_0_10px_var(--secondary)] bg-secondary'}`} />
+                    <div
+                      className={cn('relative z-10 h-2.5 w-2.5 rounded-full', glow === 'primary' ? 'bg-primary' : 'bg-secondary')}
+                      style={{ boxShadow: glow === 'primary' ? 'var(--glow-primary)' : 'var(--glow-secondary)' }}
+                    />
                   </div>
                   {isPrimary ? (
-                    <div className="flex-1 rounded-[28px] bg-primary p-7 md:p-8 relative shadow-[0_4px_24px_rgba(182,255,0,0.4)]">
-                      <div className="text-[#324b00] font-headline font-bold text-[14px] tracking-widest mb-2 bg-[#324b00]/10 inline-block px-2 py-0.5 rounded">{item.time}</div>
-                      <h3 className="font-headline text-[28px] font-bold lowercase text-[#1c1b18] leading-[1.1] mb-6">{item.courseTitle?.toLowerCase()}</h3>
+                    <div
+                      className="flex-1 rounded-[var(--radius-lg)] p-7 md:p-8"
+                      style={{
+                        background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, white 12%), color-mix(in srgb, var(--secondary) 14%, var(--primary) 86%))',
+                        boxShadow: 'var(--elevation-card)',
+                      }}
+                    >
+                      <div
+                        className="mb-2 inline-block rounded px-2 py-0.5 font-headline text-[14px] font-bold tracking-widest"
+                        style={{ background: 'rgba(0,0,0,0.08)', color: 'var(--text-inverse)' }}
+                      >
+                        {item.time}
+                      </div>
+                      <h3 className="mb-6 font-headline text-[28px] font-bold lowercase leading-[1.1] text-[var(--text-inverse)]">
+                        {item.courseTitle?.toLowerCase()}
+                      </h3>
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="font-label text-[9px] uppercase tracking-[0.2em] text-[#324b00]/60 block mb-1 font-bold">room</span>
-                          <span className="font-headline text-lg font-bold text-[#1c1b18] leading-tight block">{item.courseRoomNo || 'TBA'}</span>
-                        </div>
-                        <div>
-                          <span className="font-label text-[9px] uppercase tracking-[0.2em] text-[#324b00]/60 block mb-1 font-bold">faculty</span>
-                          <span className="font-headline text-lg font-bold text-[#1c1b18] leading-tight block">{item.faculty || 'Faculty TBA'}</span>
-                        </div>
+                        <InfoColumn label="room" value={item.courseRoomNo || 'TBA'} inverse />
+                        <InfoColumn label="faculty" value={item.faculty || 'Faculty TBA'} inverse />
                       </div>
                     </div>
                   ) : (
-                    <GlowCard glowColor={glow} className={`flex-1 border-l-2 ${glow === 'primary' ? 'border-l-primary' : 'border-l-secondary'} bg-[#121212]/80 backdrop-blur-xl`}>
-                      <div className="text-secondary font-headline font-bold text-[14px] tracking-widest mb-2">{item.time}</div>
-                      <h3 className="font-headline text-[26px] font-bold lowercase text-white leading-[1.1] mb-6 pr-4">{item.courseTitle?.toLowerCase()}</h3>
+                    <GlowCard glowColor={glow} className="flex-1 border-l-2 bg-transparent">
+                      <div className="mb-2 font-headline text-[14px] font-bold tracking-widest text-secondary">{item.time}</div>
+                      <h3 className="mb-6 pr-4 font-headline text-[26px] font-bold lowercase leading-[1.1] text-on-surface">
+                        {item.courseTitle?.toLowerCase()}
+                      </h3>
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="font-label text-[9px] uppercase tracking-[0.2em] text-[#808080] block mb-1">room</span>
-                          <span className="font-headline text-lg font-bold text-white leading-tight block">{item.courseRoomNo || 'TBA'}</span>
-                        </div>
-                        <div>
-                          <span className="font-label text-[9px] uppercase tracking-[0.2em] text-[#808080] block mb-1">faculty</span>
-                          <span className="font-headline text-lg font-bold text-white leading-tight block">{item.faculty || 'Faculty TBA'}</span>
-                        </div>
+                        <InfoColumn label="room" value={item.courseRoomNo || 'TBA'} />
+                        <InfoColumn label="faculty" value={item.faculty || 'Faculty TBA'} />
                       </div>
                     </GlowCard>
                   )}
@@ -100,10 +117,31 @@ export default function TimetablePage() {
               );
             })
           ) : (
-            <RevealItem className="ml-8 rounded-[28px] border border-white/5 bg-[#121212] p-8 text-[#808080] font-body">No classes found for this day order.</RevealItem>
+            <RevealItem className="theme-card ml-8 p-8 text-on-surface-variant">No classes found for this day order.</RevealItem>
           )}
         </div>
       </section>
     </PageReveal>
+  );
+}
+
+function InfoColumn({
+  label,
+  value,
+  inverse,
+}: {
+  label: string;
+  value: string;
+  inverse?: boolean;
+}) {
+  return (
+    <div>
+      <span className={cn('mb-1 block font-label text-[9px] font-bold uppercase tracking-[0.2em]', inverse ? 'text-[rgba(0,0,0,0.55)]' : 'text-on-surface-variant')}>
+        {label}
+      </span>
+      <span className={cn('block font-headline text-lg font-bold leading-tight', inverse ? 'text-[var(--text-inverse)]' : 'text-on-surface')}>
+        {value}
+      </span>
+    </div>
   );
 }

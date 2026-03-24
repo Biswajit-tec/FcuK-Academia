@@ -3,12 +3,12 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bell, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Bell } from 'lucide-react';
 
 import CountUp from '@/components/ui/CountUp';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { cn } from '@/lib/utils';
-import { createAvatarUrl, getTotalMarks, getNextClass, getOverallAttendance, getWeakestMark, getDayOrders } from '@/lib/academia-ui';
+import { createAvatarUrl, getDayOrders, getNextClass, getOverallAttendance, getTotalMarks, getWeakestMark } from '@/lib/academia-ui';
 import { useDashboard } from '@/hooks/useDashboard';
 
 export default function HomePage() {
@@ -44,100 +44,132 @@ export default function HomePage() {
   );
 
   return (
-    <PageReveal className="flex flex-col gap-10 pb-40 pt-4">
+    <PageReveal className="flex flex-col gap-8 pb-40 pt-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
+          <div
+            className="relative h-10 w-10 overflow-hidden rounded-full border"
+            style={{ borderColor: 'var(--border)' }}
+          >
             <Image src={avatarUrl} alt="Profile" fill className="object-cover" unoptimized />
           </div>
-          <span className="font-headline normal-case font-bold text-xl text-primary tracking-tighter">FucK Academia</span>
+          <span className="font-headline text-xl font-bold normal-case tracking-tight text-primary">FucK Academia</span>
         </div>
-        <Bell className="text-primary w-6 h-6" />
+        <Bell className="h-6 w-6 text-primary" />
       </header>
 
-      <section className="mt-2">
-        <RevealHeading>
-          <h1 className="font-headline normal-case text-[3.8rem] font-bold leading-[0.8] tracking-tighter text-white">sup, {profileName}</h1>
-        </RevealHeading>
+      <section className="mt-1 space-y-2">
         <RevealText>
-          <p className="font-label text-[10px] font-bold tracking-[0.2em] text-[#808080] uppercase mt-4">
-            {user?.department || 'ready for the grind?'}
-          </p>
+          <p className="theme-kicker">{user?.department || 'ready for the grind?'}</p>
         </RevealText>
+        <RevealHeading>
+          <h1 className="font-headline text-[3.6rem] font-bold leading-[0.84] tracking-tight text-on-surface">
+            sup, {profileName}
+          </h1>
+        </RevealHeading>
       </section>
 
-      <section className="flex gap-3">
-        {(dayOrders.length ? dayOrders : [1, 2, 3, 4, 5]).map((num) => (
-          <button
-            key={num}
-            onClick={() => setDayOrder(num)}
-            className={cn(
-              'w-11 h-11 shrink-0 rounded-full font-headline text-xl font-bold flex items-center justify-center transition-all',
-              dayOrder === num
-                ? 'bg-[#e0eab0] text-[#1c1b18] shadow-[0_0_15px_rgba(224,234,176,0.4)]'
-                : 'border-2 border-[#3a3a3a] text-[#808080] hover:border-white/20',
-            )}
-          >
-            {num}
-          </button>
-        ))}
+      <section className="-mx-4 overflow-x-auto px-4 pb-2">
+        <div className="flex min-w-max gap-3">
+          {(dayOrders.length ? dayOrders : [1, 2, 3, 4, 5]).map((num) => (
+            <button
+              key={num}
+              type="button"
+              onClick={() => setDayOrder(num)}
+              className={cn(
+                'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border font-headline text-xl font-bold transition-all',
+                dayOrder === num ? 'text-[var(--text-inverse)] shadow-[var(--glow-primary)]' : 'text-on-surface-variant',
+              )}
+              style={
+                dayOrder === num
+                  ? {
+                      backgroundColor: 'var(--primary)',
+                      borderColor: 'var(--primary)',
+                    }
+                  : {
+                      background: 'color-mix(in srgb, var(--surface-soft) 92%, transparent)',
+                      borderColor: 'var(--border)',
+                    }
+              }
+            >
+              {num}
+            </button>
+          ))}
+        </div>
       </section>
 
-      <RevealItem className="relative mt-4 px-1 overflow-hidden">
-        <div className="absolute right-0 top-0 opacity-[0.05] -z-10">
-          <span className="font-headline text-[12rem] font-bold tracking-tighter leading-none">01</span>
+      <RevealItem className="relative overflow-hidden px-1">
+        <div className="pointer-events-none absolute right-0 top-0 -z-10 opacity-[0.08]">
+          <span className="font-headline text-[12rem] font-bold leading-none tracking-tight text-on-surface">
+            01
+          </span>
         </div>
 
-        <div className="inline-flex items-center gap-2 bg-[#1c1c1c] border border-secondary/20 rounded-full px-4 py-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-          <span className="font-label text-[9px] font-bold tracking-widest text-secondary uppercase">FIRST CLASS • SUBJECT</span>
+        <div
+          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5"
+          style={{
+            background: 'color-mix(in srgb, var(--surface-soft) 92%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--secondary) 22%, transparent)',
+          }}
+        >
+          <div className="h-1.5 w-1.5 rounded-full bg-secondary" />
+          <span className="font-label text-[9px] font-bold uppercase tracking-widest text-secondary">first class • subject</span>
         </div>
 
-        <h2 className="font-headline text-[clamp(3.8rem,21vw,5.2rem)] font-bold text-primary leading-[0.88] tracking-tighter mt-6 max-w-full [overflow-wrap:anywhere] break-words">
+        <h2 className="mt-6 max-w-full break-words font-headline text-[clamp(3.4rem,21vw,5rem)] font-bold leading-[0.9] tracking-tight text-primary [overflow-wrap:anywhere]">
           {loading ? 'loading' : nextClass?.courseTitle?.toLowerCase() || 'no class'}
         </h2>
-        <p className="font-headline text-2xl font-bold text-[#808080] mt-3 tracking-tight">{nextClass?.time || 'schedule unavailable'}</p>
+        <p className="mt-3 font-headline text-2xl font-bold tracking-tight text-on-surface-variant">
+          {nextClass?.time || 'schedule unavailable'}
+        </p>
       </RevealItem>
 
-      <RevealItem className="flex gap-3">
-        <div className="bg-[#121212] rounded-[32px] p-7 flex-1 border border-white/5">
+      <RevealItem className="grid grid-cols-2 gap-3">
+        <div className="theme-card p-6">
           <div className="space-y-0.5">
-            <span className="block font-label text-[9px] font-bold tracking-[0.18em] text-[#808080] uppercase">OVERALL</span>
-            <span className="block font-label text-[9px] font-bold tracking-[0.18em] text-[#808080] uppercase">ATTENDANCE</span>
+            <span className="block font-label text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">overall</span>
+            <span className="block font-label text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">attendance</span>
           </div>
-          <div className="font-headline text-[2.8rem] font-bold text-primary mt-1 leading-none tracking-tighter">
+          <div className="mt-2 font-headline text-[2.6rem] font-bold leading-none tracking-tight text-primary">
             {loading ? '0.0%' : <CountUp value={overallAttendance} decimals={1} suffix="%" />}
           </div>
-          <div className="font-label text-[10px] font-bold tracking-widest text-secondary mt-3 uppercase">
+          <div className="mt-3 font-label text-[10px] font-bold uppercase tracking-widest text-secondary">
             {overallAttendance >= 75 ? "you're safe" : 'recovery mode'}
           </div>
         </div>
-        <div className="bg-[#121212] rounded-[32px] p-7 flex-1 border border-white/5">
-          <span className="font-label text-[9px] font-bold tracking-[0.2em] text-[#808080] uppercase">TOTAL MARKS</span>
-          <div className="font-headline text-[clamp(2.15rem,10vw,2.85rem)] font-bold text-white mt-3 leading-none tracking-tighter">
+
+        <div className="theme-card p-6">
+          <span className="block font-label text-[9px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">total marks</span>
+          <div className="mt-3 font-headline text-[clamp(2.15rem,10vw,2.85rem)] font-bold leading-none tracking-tight text-on-surface">
             {loading ? '0.00' : <CountUp value={totalMarks} decimals={2} />}
           </div>
-          <div className="font-label text-[10px] font-bold tracking-widest text-[#808080] mt-3 uppercase">live internal total</div>
+          <div className="mt-3 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">live internal total</div>
         </div>
       </RevealItem>
 
       <RevealItem>
-        <div className="bg-error rounded-[28px] p-8 flex flex-col gap-3 relative shadow-[0_4px_24px_rgba(255,115,81,0.3)]">
-          <AlertTriangle className="absolute right-8 top-8 w-8 h-8 text-[#1c1b18]" />
-          <h3 className="font-headline text-2xl font-bold lowercase text-[#1c1b18] leading-tight pr-12">academic alert: watch your weakest subject</h3>
-          <p className="font-body font-bold text-[#1c1b18] text-sm">
-            {weakestSubjectName
-              ? `${weakestSubjectName} currently needs attention.`
-              : 'all systems nominal.'}
+        <div
+          className="relative flex flex-col gap-3 rounded-[var(--radius-lg)] p-7"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--error) 88%, white 12%), color-mix(in srgb, var(--accent) 52%, var(--error) 48%))',
+            boxShadow: '0 20px 46px color-mix(in srgb, var(--error) 22%, transparent)',
+          }}
+        >
+          <AlertTriangle className="absolute right-7 top-7 h-7 w-7" style={{ color: 'var(--text-inverse)' }} />
+          <h3 className="pr-10 font-headline text-2xl font-bold lowercase leading-tight" style={{ color: 'var(--text-inverse)' }}>
+            academic alert: watch your weakest subject
+          </h3>
+          <p className="text-sm font-semibold" style={{ color: 'color-mix(in srgb, var(--text-inverse) 90%, transparent)' }}>
+            {weakestSubjectName ? `${weakestSubjectName} currently needs attention.` : 'all systems nominal.'}
           </p>
         </div>
       </RevealItem>
 
-      <section className="space-y-6">
+      <section className="space-y-5">
         <RevealText className="flex items-center justify-between">
-          <h3 className="font-headline text-2xl font-bold lowercase text-white">recent marks</h3>
-          <Link href="/marks" className="font-label text-[10px] font-bold tracking-widest text-[#808080] uppercase border-b border-[#333] pb-0.5">
-            VIEW ALL
+          <h3 className="font-headline text-2xl font-bold lowercase text-on-surface">recent marks</h3>
+          <Link href="/marks" className="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+            view all
           </Link>
         </RevealText>
         {error ? <p className="text-sm text-error font-body">{error}</p> : null}
@@ -145,14 +177,14 @@ export default function HomePage() {
           {recentMarks.length ? recentMarks.map((item, index) => (
             <RevealItem key={`${item.course}-${index}`}>
               <MarkItem
-                dotColor={index === 0 ? 'bg-secondary' : index === 1 ? 'bg-primary' : 'bg-[#ff9d68]'}
+                dotColor={index === 0 ? 'var(--secondary)' : index === 1 ? 'var(--primary)' : 'var(--accent)'}
                 title={item.displayTitle}
                 score={`${item.total.obtained.toFixed(2)}/${(item.total.maxMark || 0).toFixed(2)}`}
               />
             </RevealItem>
           )) : (
             <RevealItem>
-              <MarkItem dotColor="bg-secondary" title={loading ? 'loading' : 'no marks yet'} score="--" />
+              <MarkItem dotColor="var(--secondary)" title={loading ? 'loading' : 'no marks yet'} score="--" />
             </RevealItem>
           )}
         </div>
@@ -163,12 +195,12 @@ export default function HomePage() {
 
 function MarkItem({ dotColor, title, score }: { dotColor: string; title: string; score: string }) {
   return (
-    <div className="bg-[#121212] rounded-[24px] p-5 flex items-center justify-between border border-white/5">
+    <div className="theme-card flex items-center justify-between p-5">
       <div className="flex min-w-0 items-center gap-4 pr-4">
-        <div className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
-        <span className="font-headline text-lg font-bold text-white leading-tight break-words">{title}</span>
+        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 12px ${dotColor}` }} />
+        <span className="font-headline text-lg font-bold leading-tight text-on-surface">{title}</span>
       </div>
-      <span className="font-headline text-xl font-bold text-white tracking-tighter">{score}</span>
+      <span className="font-headline text-xl font-bold tracking-tight text-on-surface">{score}</span>
     </div>
   );
 }

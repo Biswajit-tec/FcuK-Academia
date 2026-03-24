@@ -1,8 +1,11 @@
 'use client';
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { motion, HTMLMotionProps } from 'framer-motion';
+
+import { useTheme } from '@/context/ThemeContext';
+import { getInteractiveMotion } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 interface ButtonProps extends HTMLMotionProps<"button"> {
   variant?: 'primary' | 'secondary' | 'brutalist' | 'ghost';
@@ -16,19 +19,22 @@ export default function Button({
   fullWidth = false,
   ...props
 }: ButtonProps) {
+  const { themeConfig } = useTheme();
+  const motionProps = getInteractiveMotion(themeConfig.motion);
   const variants = {
-    primary: "bg-primary-container text-[#324A00] font-bold rounded-full px-8 py-3 hover:opacity-90 transition-opacity drop-shadow-[0_0_15px_rgba(182,255,0,0.5)]",
-    secondary: "bg-secondary text-background font-bold rounded-full px-8 py-3 hover:opacity-90 drop-shadow-[0_0_15px_rgba(0,224,255,0.5)]",
-    brutalist: "bg-surface-low border-2 border-error text-error p-8 rounded-xl font-headline text-3xl font-bold lowercase tracking-tighter shadow-[4px_4px_0px_0px_var(--error)] hover:bg-error hover:text-background flex items-center justify-center gap-4 transition-all duration-200",
-    ghost: "text-primary font-bold lowercase tracking-tight hover:underline underline-offset-4",
+    primary: "rounded-[var(--radius-pill)] bg-primary px-6 py-3 font-label font-semibold uppercase tracking-[0.22em] text-[var(--text-inverse)] shadow-[var(--glow-primary)]",
+    secondary: "rounded-[var(--radius-pill)] bg-secondary px-6 py-3 font-label font-semibold uppercase tracking-[0.22em] text-[var(--text-inverse)] shadow-[var(--glow-secondary)]",
+    brutalist: "flex items-center justify-center gap-4 rounded-[var(--radius-md)] border-2 border-error bg-[var(--surface-soft)] p-6 font-headline text-2xl font-bold lowercase tracking-tight text-error shadow-[4px_4px_0_0_var(--error)]",
+    ghost: "font-label font-semibold uppercase tracking-[0.2em] text-primary",
   };
 
   return (
     <motion.button
-      whileTap={{ scale: 0.95 }}
-      whileHover={{ scale: 1.02 }}
+      whileTap={motionProps.whileTap}
+      whileHover={motionProps.whileHover}
+      transition={motionProps.transition}
       className={cn(
-        "transition-transform inline-flex items-center justify-center",
+        "inline-flex items-center justify-center transition-transform",
         variants[variant],
         fullWidth && "w-full",
         className

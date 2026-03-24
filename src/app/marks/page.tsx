@@ -2,12 +2,12 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Bell, TrendingUp, AlertTriangle, ListFilter } from 'lucide-react';
+import { AlertTriangle, Bell, ListFilter, TrendingUp } from 'lucide-react';
 
+import CountUp from '@/components/ui/CountUp';
 import GlassCard from '@/components/ui/GlassCard';
 import GlowCard from '@/components/ui/GlowCard';
 import SubjectCard from '@/components/dashboard/SubjectCard';
-import CountUp from '@/components/ui/CountUp';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useMarks } from '@/hooks/useMarks';
 import { useUser } from '@/hooks/useUser';
@@ -33,76 +33,95 @@ export default function MarksPage() {
     <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
+          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[color:var(--border)]">
             <Image src={avatarUrl} alt="Profile" fill className="object-cover" unoptimized />
           </div>
-          <span className="font-headline normal-case font-bold text-xl text-primary tracking-tighter">FucK Academia</span>
+          <span className="font-headline text-xl font-bold normal-case tracking-tight text-primary">FucK Academia</span>
         </div>
-        <Bell className="text-primary w-6 h-6" />
+        <Bell className="h-6 w-6 text-primary" />
       </header>
 
-      <section className="space-y-1 mt-4">
-        <p className="font-label text-[10px] font-bold tracking-[0.2em] text-[#adaaaa] uppercase">TOTAL AGGREGATE</p>
+      <section className="mt-2 space-y-2">
+        <p className="theme-kicker">total aggregate</p>
         <RevealHeading className="flex items-baseline gap-2">
-          <span className="font-headline font-bold text-[5.5rem] leading-[0.8] tracking-tighter text-primary">
+          <span className="font-headline text-[5.2rem] font-bold leading-[0.82] tracking-tight text-primary">
             {loading ? '0.0' : <CountUp value={totalObtained} decimals={1} />}
           </span>
-          <span className="font-headline font-bold text-4xl text-[#808080]">/ {totalMax || 0}</span>
+          <span className="font-headline text-4xl font-bold text-on-surface-variant">/ {totalMax || 0}</span>
         </RevealHeading>
-        <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.02] rounded-full px-4 py-1.5 mt-4">
-          <TrendingUp className="w-3.5 h-3.5 text-primary" />
-          <span className="font-body text-xs text-[#e0e0e0] font-semibold">
+        <div
+          className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5"
+          style={{
+            background: 'color-mix(in srgb, var(--surface-soft) 92%, transparent)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <TrendingUp className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-semibold text-on-surface">
             {loading ? '0.0% live internal score' : <CountUp value={percentage} decimals={1} suffix="% live internal score" />}
           </span>
         </div>
       </section>
 
       <RevealItem>
-        <GlassCard className="mt-4 flex flex-col justify-between p-7">
+        <GlassCard className="mt-2 flex flex-col justify-between p-6">
           <div>
-            <h2 className="font-headline text-3xl font-bold lowercase tracking-tighter text-white mb-1">future grade prediction</h2>
-            <p className="font-body text-sm text-[#adaaaa]">based on current trajectory</p>
+            <h2 className="font-headline text-3xl font-bold lowercase tracking-tight text-on-surface">future grade prediction</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">based on current trajectory</p>
           </div>
-          <div className="flex items-end justify-between mt-8">
+          <div className="mt-8 flex items-end justify-between gap-4">
             <div>
-              <span className="font-headline font-bold text-6xl text-secondary inline-block leading-none">{predictedGrade}</span>
-              <p className="font-label text-[10px] font-bold tracking-widest text-secondary/80 mt-2 uppercase">
-                PROBABILITY {loading ? '0%' : <CountUp value={probability} suffix="%" />}
+              <span className="inline-block font-headline text-6xl font-bold leading-none text-secondary">{predictedGrade}</span>
+              <p className="mt-2 font-label text-[10px] font-bold uppercase tracking-widest text-secondary/80">
+                probability {loading ? '0%' : <CountUp value={probability} suffix="%" />}
               </p>
             </div>
-            <button className="bg-primary text-[#324b00] font-label font-bold uppercase tracking-widest textxs px-6 py-3 rounded-full hover:bg-primary/90 transition-colors shadow-[0_4px_14px_rgba(182,255,0,0.3)]">
-              SIMULATE
+            <button type="button" className="theme-outline-button px-5 py-3 font-label text-[10px] font-bold uppercase tracking-widest">
+              simulate
             </button>
           </div>
         </GlassCard>
       </RevealItem>
 
       <RevealItem>
-        <GlowCard glowColor="error" borderStyle="dashed" className="mt-2 text-center relative overflow-hidden bg-gradient-to-b from-[#1c0d0a] to-[#0c0c0c] border-[1.5px] p-8">
-          <AlertTriangle className="absolute right-6 top-6 w-7 h-7 text-error" />
-          <div className="text-left w-full mb-6">
-            <h3 className="font-headline text-3xl font-bold lowercase tracking-tighter text-error">you&apos;re cooked</h3>
-            <p className="font-body text-sm text-[#adaaaa] mt-1">subjects requiring immediate trauma recovery</p>
-          </div>
-          <div className="bg-[#181110] border border-[#3b1b16] rounded-[24px] p-5 sm:p-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="text-left min-w-0 flex-1">
-              <h4 className="font-headline text-[2rem] font-bold lowercase text-white leading-[1] break-words">{weakestSubjectName}</h4>
-              <p className="font-label text-[10px] font-bold tracking-widest text-[#adaaaa] mt-1 uppercase">
-                {weakest ? `${weakest.category} • INTERNAL: ${weakest.total.obtained}/${weakest.total.maxMark}` : 'LIVE DATA • INTERNALS STABLE'}
-              </p>
+        <GlowCard glowColor="error" borderStyle="dashed" className="mt-1 p-0">
+          <div
+            className="rounded-[inherit] p-6"
+            style={{
+              background: 'linear-gradient(180deg, color-mix(in srgb, var(--error) 14%, var(--surface)) 0%, var(--surface) 100%)',
+            }}
+          >
+            <AlertTriangle className="absolute right-6 top-6 h-7 w-7 text-error" />
+            <div className="mb-6 w-full text-left">
+              <h3 className="font-headline text-3xl font-bold lowercase tracking-tight text-error">you&apos;re cooked</h3>
+              <p className="mt-1 text-sm text-on-surface-variant">subjects requiring immediate trauma recovery</p>
             </div>
-            <span className="font-headline font-bold text-[4.2rem] sm:text-5xl text-error tracking-tighter leading-none self-start sm:self-auto shrink-0">
-              {weakest && weakest.total.maxMark
-                ? (loading ? '0.0' : <CountUp value={(weakest.total.obtained / weakest.total.maxMark) * 100} decimals={1} />)
-                : '--'}
-            </span>
+            <div
+              className="flex flex-col gap-5 rounded-[24px] p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6"
+              style={{
+                background: 'color-mix(in srgb, var(--surface-soft) 94%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--error) 22%, transparent)',
+              }}
+            >
+              <div className="min-w-0 flex-1 text-left">
+                <h4 className="font-headline text-[2rem] font-bold lowercase leading-[1] text-on-surface">{weakestSubjectName}</h4>
+                <p className="mt-1 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                  {weakest ? `${weakest.category} • INTERNAL: ${weakest.total.obtained}/${weakest.total.maxMark}` : 'live data • internals stable'}
+                </p>
+              </div>
+              <span className="shrink-0 self-start font-headline text-[4.2rem] font-bold leading-none tracking-tight text-error sm:self-auto sm:text-5xl">
+                {weakest && weakest.total.maxMark
+                  ? (loading ? '0.0' : <CountUp value={(weakest.total.obtained / weakest.total.maxMark) * 100} decimals={1} />)
+                  : '--'}
+              </span>
+            </div>
           </div>
         </GlowCard>
       </RevealItem>
 
-      <RevealText className="flex items-center justify-between mt-12">
-        <h2 className="font-headline text-4xl font-bold lowercase tracking-tighter text-white">academic breakdown</h2>
-        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#adaaaa] bg-[#121212]">
+      <RevealText className="mt-10 flex items-center justify-between">
+        <h2 className="font-headline text-4xl font-bold lowercase tracking-tight text-on-surface">academic breakdown</h2>
+        <div className="theme-icon-button flex items-center justify-center">
           <ListFilter size={18} />
         </div>
       </RevealText>
@@ -111,7 +130,7 @@ export default function MarksPage() {
       <div className="grid grid-cols-1 gap-6">
         {loading ? (
           <div className="animate-pulse space-y-4">
-            {[1, 2, 3].map((i) => <div key={i} className="h-40 bg-surface rounded-[28px]" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-40 rounded-[28px] bg-surface" />)}
           </div>
         ) : (
           marks.map((subject, index) => (

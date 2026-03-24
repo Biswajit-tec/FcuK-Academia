@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import GlassCard from '../ui/GlassCard';
 import { cn } from '@/lib/utils';
 
@@ -11,16 +12,23 @@ export default function DayOrderSelector() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-primary">active day order</h3>
+      <div className="space-y-1">
+        <p className="theme-kicker">preferences</p>
+        <h3 className="font-headline text-2xl font-bold text-on-surface">active day order</h3>
+      </div>
       <div className="grid grid-cols-3 gap-3">
         {days.map((day) => (
           <GlassCard
             key={day}
             onClick={() => setSelected(day)}
             className={cn(
-              "p-4 text-center cursor-pointer border-2 transition-all",
-              selected === day ? "border-primary bg-primary/10" : "border-outline/5"
+              "cursor-pointer p-4 text-center transition-all",
+              selected === day ? "shadow-[var(--glow-primary)]" : ""
             )}
+            style={selected === day ? {
+              borderColor: 'var(--border-strong)',
+              background: 'color-mix(in srgb, var(--primary) 14%, transparent)',
+            } : { borderColor: 'var(--border)' }}
           >
             <span className={cn(
                "font-headline text-lg",

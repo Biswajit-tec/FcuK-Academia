@@ -124,19 +124,19 @@ export default function CalendarPage() {
     <PageReveal className="flex flex-col gap-8 pb-40 pt-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
+          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[color:var(--border)]">
             <Image src={avatarUrl} alt="Profile" fill className="object-cover" unoptimized />
           </div>
-          <span className="font-headline normal-case font-bold text-xl text-primary tracking-tighter">FucK Academia</span>
+          <span className="font-headline text-xl font-bold normal-case tracking-tight text-primary">FucK Academia</span>
         </div>
-        <Bell className="text-primary w-6 h-6" />
+        <Bell className="h-6 w-6 text-primary" />
       </header>
 
-      <section className="mt-4">
-        <span className="font-label text-[10px] font-bold tracking-[0.2em] text-[#808080] uppercase">CURRENT CYCLE</span>
+      <section className="mt-2">
+        <span className="theme-kicker">current cycle</span>
         <RevealHeading>
-          <h1 className="font-headline mt-4 text-[7.5rem] font-bold leading-[0.8] tracking-tighter">
-            <span className="text-white">day </span>
+          <h1 className="mt-4 font-headline text-[7rem] font-bold leading-[0.82] tracking-tight">
+            <span className="text-on-surface">day </span>
             <span className="text-primary">
               {loading || !selectedDay?.dayOrder || selectedDay.dayOrder === '--' || Number.isNaN(Number(selectedDay.dayOrder))
                 ? '--'
@@ -145,7 +145,7 @@ export default function CalendarPage() {
           </h1>
         </RevealHeading>
         <RevealText>
-          <p className="font-headline text-2xl font-semibold italic text-[#808080] mt-6">
+          <p className="mt-5 font-headline text-2xl font-semibold italic text-on-surface-variant">
             {loading
               ? 'calendar syncing...'
               : selectedDay && activeMonth
@@ -157,45 +157,35 @@ export default function CalendarPage() {
         </RevealText>
       </section>
 
-      <RevealItem className="bg-[#121212] rounded-[42px] p-10 mt-2 border border-white/5 shadow-[0_4px_44px_rgba(0,0,0,0.6)]">
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="font-headline text-3xl font-bold text-white tracking-tight">
+      <RevealItem className="theme-card mt-1 p-7 sm:p-8">
+        <div className="mb-10 flex items-center justify-between">
+          <h2 className="font-headline text-3xl font-bold tracking-tight text-on-surface">
             {activeMonth ? formatMonthTitle(activeMonth.month).toLowerCase() : 'calendar'}
           </h2>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               onClick={goToPreviousMonth}
               disabled={!canGoPrevious}
-              className={cn(
-                'w-10 h-10 rounded-full border flex items-center justify-center bg-[#1c1c1c] transition-colors',
-                canGoPrevious
-                  ? 'border-white/10 text-[#808080] hover:text-white'
-                  : 'border-white/5 text-[#4a4a4a] cursor-not-allowed',
-              )}
+              className="theme-icon-button flex items-center justify-center"
               aria-label="Previous month"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={20} className={cn(!canGoPrevious && 'opacity-40')} />
             </button>
             <button
               onClick={goToNextMonth}
               disabled={!canGoNext}
-              className={cn(
-                'w-10 h-10 rounded-full border flex items-center justify-center bg-[#1c1c1c] transition-colors',
-                canGoNext
-                  ? 'border-white/10 text-[#808080] hover:text-white'
-                  : 'border-white/5 text-[#4a4a4a] cursor-not-allowed',
-              )}
+              className="theme-icon-button flex items-center justify-center"
               aria-label="Next month"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={20} className={cn(!canGoNext && 'opacity-40')} />
             </button>
           </div>
         </div>
 
-        {error ? <p className="text-sm text-error font-body mb-6">{error}</p> : null}
+        {error ? <p className="mb-6 text-sm text-error font-body">{error}</p> : null}
         <div className="grid grid-cols-7 gap-y-8 text-center">
           {days.map((day) => (
-            <div key={day} className="font-label text-[9px] font-bold tracking-[0.2em] text-[#444] uppercase">{day}</div>
+            <div key={day} className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">{day}</div>
           ))}
           {(loading ? [] : dates).map((date, index) => {
             const dateKey = activeMonth ? getDayKey(activeMonth.month, date.date) : `${date.date}-${index}`;
@@ -207,54 +197,42 @@ export default function CalendarPage() {
                 key={dateKey}
                 type="button"
                 onClick={() => handleSelectDay(date.date)}
-                className="relative flex flex-col items-center group cursor-pointer"
+                className="group relative flex flex-col items-center"
               >
                 <div
                   className={cn(
-                    'w-11 h-11 flex items-center justify-center font-headline text-xl font-bold rounded-xl transition-all',
-                    isSelected && tone === 'holiday' && 'border-2 border-[#ffb86b] bg-[#ffb86b]/12 text-[#ffb86b] shadow-[0_0_18px_rgba(255,184,107,0.3)] scale-110',
-                    isSelected && tone === 'exam' && 'border-2 border-secondary bg-secondary/10 text-secondary shadow-[0_0_18px_rgba(0,224,255,0.25)] scale-110',
-                    isSelected && tone === 'event' && 'border-2 border-error bg-error/10 text-error shadow-[0_0_18px_rgba(255,115,81,0.22)] scale-110',
-                    isSelected && tone === 'default' && 'border-2 border-primary bg-primary/10 text-primary shadow-[0_0_20px_rgba(182,255,0,0.3)] scale-110',
-                    !isSelected && tone === 'holiday' && 'text-[#ffb86b] group-hover:bg-[#ffb86b]/8',
-                    !isSelected && tone === 'exam' && 'text-secondary group-hover:bg-secondary/8',
-                    !isSelected && tone === 'event' && 'text-error group-hover:bg-error/8',
-                    !isSelected && tone === 'default' && 'text-white group-hover:bg-white/5',
+                    'flex h-11 w-11 items-center justify-center rounded-xl font-headline text-xl font-bold transition-all',
+                    !isSelected && tone === 'default' && 'text-on-surface group-hover:bg-white/5',
+                    !isSelected && tone === 'exam' && 'text-secondary',
+                    !isSelected && tone === 'event' && 'text-error',
+                    !isSelected && tone === 'holiday' && 'text-warning',
                   )}
+                  style={getCalendarDayStyle(tone, isSelected)}
                 >
                   {date.date}
                 </div>
-                <div className="flex gap-0.5 mt-1 absolute -bottom-3">
-                  {tone !== 'default' ? (
-                    <div
-                      className={cn(
-                        'w-1.5 h-1.5 rounded-full shadow-sm',
-                        tone === 'holiday' && 'bg-[#ffb86b]',
-                        tone === 'exam' && 'bg-secondary',
-                        tone === 'event' && 'bg-error',
-                      )}
-                    />
-                  ) : null}
-                </div>
+                {tone !== 'default' ? (
+                  <div className="absolute -bottom-3 mt-1 h-1.5 w-1.5 rounded-full" style={{ background: getToneColor(tone), boxShadow: `0 0 10px ${getToneColor(tone)}` }} />
+                ) : null}
               </button>
             );
           })}
         </div>
       </RevealItem>
 
-      <RevealText className="flex flex-wrap gap-5 px-1 mt-4">
-        <LegendItem color="bg-secondary" label="MAJOR EXAMS" />
-        <LegendItem color="bg-error" label="EVENTS" />
-        <LegendItem color="bg-[#ffb86b]" label="HOLIDAYS" />
-        <LegendItem color="bg-[#444]" label="DAY ORDER" />
+      <RevealText className="mt-2 flex flex-wrap gap-5 px-1">
+        <LegendItem color="var(--secondary)" label="major exams" />
+        <LegendItem color="var(--error)" label="events" />
+        <LegendItem color="var(--warning)" label="holidays" />
+        <LegendItem color="var(--text-subtle)" label="day order" />
       </RevealText>
 
-      <section className="mt-6">
-        <RevealText className="inline-block border-b-2 border-primary mb-8 px-1">
-          <h2 className="font-headline text-2xl font-bold lowercase text-white pb-1">daily_events</h2>
+      <section className="mt-4">
+        <RevealText className="mb-6 inline-block border-b-2 border-primary px-1">
+          <h2 className="pb-1 font-headline text-2xl font-bold lowercase text-on-surface">daily_events</h2>
         </RevealText>
 
-        <GlassCard className="p-8 space-y-8 bg-[#121212]/50 backdrop-blur-xl border border-white/5">
+        <GlassCard className="space-y-8 p-6">
           {(monthEventItems.length
             ? monthEventItems
             : [{ date: selectedDay?.date || '--', day: selectedDay?.day || 'stay tuned', dayOrder: selectedDay?.dayOrder || '-', event: selectedDay?.event && selectedDay.event !== '-' ? selectedDay.event : 'no upcoming events' }]
@@ -286,8 +264,8 @@ export default function CalendarPage() {
 function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={cn('w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]', color === 'bg-secondary' ? 'text-secondary' : color === 'bg-error' ? 'text-error' : color === 'bg-[#ffb86b]' ? 'text-[#ffb86b]' : 'text-[#444]', color)} />
-      <span className="font-label text-[8px] font-bold tracking-widest text-[#808080] uppercase">{label}</span>
+      <div className="h-2 w-2 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+      <span className="font-label text-[8px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</span>
     </div>
   );
 }
@@ -305,32 +283,44 @@ function AgendaItem({
   tone: CalendarTone;
   active?: boolean;
 }) {
+  const color = getToneColor(tone);
+
   return (
-    <div className="flex gap-8 relative group">
-      <div className="w-12 pt-1 font-label text-[10px] font-bold tracking-widest text-[#808080] uppercase opacity-70">{time}</div>
-      <div className="flex-1 relative pl-5">
-        <div
-          className={cn(
-            'absolute left-0 top-1 bottom-1 w-[2px]',
-            tone === 'holiday' && 'bg-[#ffb86b] shadow-[0_0_12px_rgba(255,184,107,0.7)]',
-            tone === 'exam' && 'bg-secondary shadow-[0_0_12px_var(--secondary)]',
-            tone === 'event' && 'bg-error shadow-[0_0_12px_var(--error)]',
-            tone === 'default' && 'bg-primary shadow-[0_0_12px_var(--primary)]',
-          )}
-        />
-        <h3
-          className={cn(
-            'font-headline text-[20px] font-bold leading-tight',
-            tone === 'holiday' && 'text-[#ffb86b]',
-            tone === 'exam' && 'text-secondary',
-            tone === 'event' && 'text-error',
-            tone === 'default' && (active ? 'text-primary' : 'text-white'),
-          )}
-        >
+    <div className="group relative flex gap-6">
+      <div className="w-10 pt-1 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/80">{time}</div>
+      <div className="relative flex-1 pl-5">
+        <div className="absolute bottom-1 left-0 top-1 w-[2px]" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+        <h3 className={cn('font-headline text-[20px] font-bold leading-tight', active && tone === 'default' ? 'text-primary' : 'text-on-surface')} style={tone !== 'default' ? { color } : undefined}>
           {title}
         </h3>
-        <p className="text-[13px] text-[#808080] mt-1.5 font-body">{subtitle}</p>
+        <p className="mt-1.5 text-[13px] text-on-surface-variant">{subtitle}</p>
       </div>
     </div>
   );
+}
+
+function getToneColor(tone: CalendarTone) {
+  if (tone === 'holiday') return 'var(--warning)';
+  if (tone === 'exam') return 'var(--secondary)';
+  if (tone === 'event') return 'var(--error)';
+  return 'var(--primary)';
+}
+
+function getCalendarDayStyle(tone: CalendarTone, isSelected: boolean) {
+  const toneColor = getToneColor(tone);
+
+  if (isSelected) {
+    return {
+      border: `2px solid ${toneColor}`,
+      background: `color-mix(in srgb, ${toneColor} 12%, transparent)`,
+      color: toneColor,
+      boxShadow: `0 0 18px color-mix(in srgb, ${toneColor} 28%, transparent)`,
+      transform: 'scale(1.08)',
+    };
+  }
+
+  return {
+    background: 'transparent',
+    border: '1px solid transparent',
+  };
 }

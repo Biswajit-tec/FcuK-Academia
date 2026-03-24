@@ -44,4 +44,118 @@ export interface UserProfile {
   studentId: string;
 }
 
-export type ThemeType = 'dark' | 'neon' | 'light';
+export type ThemeType =
+  | 'neon-lime'
+  | 'cyan-navy'
+  | 'electric-blue'
+  | 'amber-charcoal'
+  | 'graphite-green'
+  | 'minimal-light'
+  | 'claymorph'
+  | 'soft-bloom';
+
+export interface ThemeMotionPreset {
+  id: string;
+  page: {
+    distance: number;
+    scale: number;
+    blur: number;
+    fadeDuration: number;
+    spring: {
+      stiffness: number;
+      damping: number;
+      mass: number;
+    };
+  };
+  swipe: {
+    threshold: number;
+    velocityThreshold: number;
+    distance: number;
+    scale: number;
+    fadeDuration: number;
+    spring: {
+      stiffness: number;
+      damping: number;
+      mass: number;
+    };
+  };
+  reveal: {
+    y: number;
+    blur: number;
+    scale: number;
+    stagger: number;
+    delay: number;
+    duration: number;
+    ease: [number, number, number, number];
+  };
+  micro: {
+    tapScale: number;
+    hoverScale: number;
+    hoverY: number;
+    duration: number;
+  };
+  intro: {
+    logoScale: number;
+    glowScale: number;
+    duration: number;
+    delay: number;
+  };
+}
+
+export interface ThemeDefinition {
+  id: ThemeType;
+  label: string;
+  shortLabel: string;
+  description: string;
+  mode: 'dark' | 'light';
+  category: 'dark' | 'light';
+  preview: string[];
+  isFemaleFocused?: boolean;
+  colors: {
+    background: string;
+    backgroundAlt: string;
+    surface: string;
+    surfaceSoft: string;
+    surfaceElevated: string;
+    surfaceHighlight: string;
+    primary: string;
+    primarySoft: string;
+    secondary: string;
+    accent: string;
+    text: string;
+    textMuted: string;
+    textSubtle: string;
+    textInverse: string;
+    success: string;
+    warning: string;
+    error: string;
+    border: string;
+    borderStrong: string;
+  };
+  glow: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    focus: string;
+  };
+  radius: {
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    pill: string;
+  };
+  elevation: {
+    soft: string;
+    card: string;
+    strong: string;
+    floating: string;
+    nav: string;
+  };
+  effects: {
+    pageGradient: string;
+    surfaceGradient: string;
+    heroGradient: string;
+  };
+  motion: ThemeMotionPreset;
+}

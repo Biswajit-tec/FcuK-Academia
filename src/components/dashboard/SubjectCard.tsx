@@ -34,10 +34,10 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
   const attendanceMargin = Math.floor((subject.attendance.attended / 0.75) - subject.attendance.total);
   const attendanceRequired = Math.ceil((0.75 * subject.attendance.total - subject.attendance.attended) / 0.25);
   const attendancePillClass = attPct < 75
-    ? 'bg-[#3b1513] text-[#ff7d72] border border-[#6c2520]'
+    ? 'text-error'
     : attendanceMargin === 0
-      ? 'bg-[#1b2636] text-[#7fc4ff] border border-[#295377]'
-      : 'bg-[#112616] text-[#8df2a3] border border-[#1f5b2b]';
+      ? 'text-secondary'
+      : 'text-success';
   const attendancePillLabel = attPct < 75
     ? `required: ${Math.max(0, attendanceRequired)}`
     : `margin: ${Math.max(0, attendanceMargin)}`;
@@ -56,8 +56,7 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
 
   return (
     <div className={cn(
-      "relative rounded-[28px] overflow-hidden bg-[#121212] border border-[#2a2a2a] p-7 md:p-8 flex flex-col gap-6",
-      `shadow-[0_0_20px_rgba(0,0,0,0.5)]`
+      "theme-card relative flex flex-col gap-6 p-7 md:p-8",
     )}>
       {/* Glow Left Edge Indicator */}
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
@@ -71,9 +70,27 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
         <>
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-headline text-2xl font-bold lowercase text-white">{subject.name}</h3>
-              <p className="font-label text-xs tracking-widest text-[#adaaaa] mt-1">{subject.attendance.attended} of {subject.attendance.total} sessions attended</p>
-              <span className={cn('inline-flex mt-3 rounded-full px-3 py-1 font-label text-[10px] font-bold tracking-widest uppercase', attendancePillClass)}>
+              <h3 className="font-headline text-2xl font-bold lowercase text-on-surface">{subject.name}</h3>
+              <p className="mt-1 font-label text-xs tracking-widest text-on-surface-variant">{subject.attendance.attended} of {subject.attendance.total} sessions attended</p>
+              <span
+                className={cn('inline-flex mt-3 rounded-full border px-3 py-1 font-label text-[10px] font-bold tracking-widest uppercase', attendancePillClass)}
+                style={
+                  attPct < 75
+                    ? {
+                        borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)',
+                        background: 'color-mix(in srgb, var(--error) 14%, transparent)',
+                      }
+                    : attendanceMargin === 0
+                      ? {
+                          borderColor: 'color-mix(in srgb, var(--secondary) 26%, transparent)',
+                          background: 'color-mix(in srgb, var(--secondary) 14%, transparent)',
+                        }
+                      : {
+                          borderColor: 'color-mix(in srgb, var(--success) 30%, transparent)',
+                          background: 'color-mix(in srgb, var(--success) 14%, transparent)',
+                        }
+                }
+              >
                 {attendancePillLabel}
               </span>
             </div>
@@ -87,8 +104,14 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
         // MARKS LAYOUT
         <>
           <div className="flex justify-between items-start">
-            <h3 className="font-headline text-3xl font-bold lowercase text-white max-w-[60%] leading-tight">{subject.name}</h3>
-            <div className="bg-[#003A43]/40 border border-[#00E0FF]/20 px-4 py-1.5 rounded-full text-[#00E0FF] font-label text-[10px] font-bold tracking-widest">
+            <h3 className="max-w-[60%] font-headline text-3xl font-bold lowercase leading-tight text-on-surface">{subject.name}</h3>
+            <div
+              className="rounded-full px-4 py-1.5 font-label text-[10px] font-bold tracking-widest text-secondary"
+              style={{
+                background: 'color-mix(in srgb, var(--secondary) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--secondary) 24%, transparent)',
+              }}
+            >
               {subject.credits} CREDITS
             </div>
           </div>
@@ -101,13 +124,17 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
                   className={cn(
                     'min-w-0 rounded-[18px] border px-2 py-3 text-center',
                     isPending
-                      ? 'border-dashed border-white/14 bg-transparent'
-                      : 'border-primary/30 bg-primary/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_0_22px_rgba(182,255,0,0.08)]',
+                      ? 'border-dashed bg-transparent'
+                      : 'shadow-[var(--glow-primary)]',
                   )}
+                  style={isPending ? { borderColor: 'var(--border)' } : {
+                    borderColor: 'color-mix(in srgb, var(--primary) 30%, transparent)',
+                    background: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+                  }}
                 >
-                  <p className={cn('font-label text-[10px] font-bold tracking-widest uppercase', isPending ? 'text-[#6f6f6f]' : 'text-primary/70')}>{exam.exam}</p>
+                  <p className={cn('font-label text-[10px] font-bold tracking-widest uppercase', isPending ? 'text-on-surface-variant' : 'text-primary/70')}>{exam.exam}</p>
                   {isPending ? (
-                    <p className="mt-3 font-headline text-[1.5rem] font-bold leading-none tracking-tighter text-[#6f6f6f]">TBA</p>
+                    <p className="mt-3 font-headline text-[1.5rem] font-bold leading-none tracking-tighter text-on-surface-variant">TBA</p>
                   ) : (
                     <div className="mt-2 flex flex-col items-center">
                       <p className="font-headline text-[1.4rem] font-bold leading-none tracking-tighter text-primary">{exam.obtained?.toFixed(2)}</p>
@@ -120,7 +147,7 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
           </div>
           <ProgressBar value={marksPct} color={hexColor} />
           <div className="text-right mt-2">
-            <span className="font-headline text-6xl font-bold tracking-tighter text-white inline-block">{subject.marks.internal.toFixed(2)}</span>
+            <span className="inline-block font-headline text-6xl font-bold tracking-tighter text-on-surface">{subject.marks.internal.toFixed(2)}</span>
           </div>
         </>
       )}

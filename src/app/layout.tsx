@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Be_Vietnam_Pro, Inter } from "next/font/google";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppLayout from "@/components/layout/AppLayout";
@@ -9,15 +9,9 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-headline",
 });
 
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-body",
-});
-
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-label",
+  variable: "--font-body",
 });
 
 export const metadata: Metadata = {
@@ -33,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceGrotesk.variable} ${beVietnamPro.variable} ${inter.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${inter.variable} antialiased`}
       >
         <ThemeProvider>
           <AppLayout>
