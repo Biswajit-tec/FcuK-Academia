@@ -70,7 +70,7 @@ export function combineSubjects(attendance: RawAttendanceItem[], marks: RawMarkI
       name: item.courseTitle.toLowerCase(),
       code: item.courseCode,
       teacher: item.courseFaculty || 'faculty tba',
-      credits: 0,
+      credits: Number(item.courseCredit) || 0,
       attendance: {
         attended,
         total: item.courseConducted,
@@ -163,23 +163,84 @@ export function flattenCalendar(calendar: RawCalendarMonth[]) {
   return calendar.flatMap((month) => month.days.map((day) => ({ ...day, month: month.month })));
 }
 
+function parseCalendarMonthLabel(label: string) {
+  const match = label.match(/([A-Za-z]{3,9})\s*'?\s*(\d{2,4})/);
+  if (!match) return null;
+
+  const monthName = match[1];
+  const yearText = match[2];
+  const monthDate = new Date(`${monthName} 1, ${yearText.length === 2 ? `20${yearText}` : yearText}`);
+  if (Number.isNaN(monthDate.getTime())) return null;
+
+  return {
+    monthIndex: monthDate.getMonth(),
+    year: monthDate.getFullYear(),
+  };
+}
+
+function toCalendarDate(month: RawCalendarMonth, date: string) {
+  const parsedMonth = parseCalendarMonthLabel(month.month);
+  const numericDate = Number(date);
+  if (!parsedMonth || Number.isNaN(numericDate)) return null;
+
+  const value = new Date(parsedMonth.year, parsedMonth.monthIndex, numericDate);
+  return Number.isNaN(value.getTime()) ? null : value;
+}
+
 export function getCurrentCalendarMonth(calendar: RawCalendarMonth[]) {
+  if (!calendar.length) return null;
+
   const now = new Date();
   const shortTarget = now.toLocaleString('en-US', { month: 'short' }).toLowerCase();
   const longTarget = now.toLocaleString('en-US', { month: 'long' }).toLowerCase();
-  return (
-    calendar.find((month) => {
-      const label = month.month.toLowerCase();
-      return label.includes(shortTarget) || label.includes(longTarget);
-    }) ?? calendar[0] ?? null
-  );
+  const matchingMonth = calendar.find((month) => {
+    const label = month.month.toLowerCase();
+    return label.includes(shortTarget) || label.includes(longTarget);
+  });
+
+  if (matchingMonth) return matchingMonth;
+
+  let closestMonth = calendar[0];
+  let smallestDistance = Number.POSITIVE_INFINITY;
+
+  for (const month of calendar) {
+    const monthDate = toCalendarDate(month, '1');
+    if (!monthDate) continue;
+    const distance = Math.abs(monthDate.getTime() - now.getTime());
+    if (distance < smallestDistance) {
+      smallestDistance = distance;
+      closestMonth = month;
+    }
+  }
+
+  return closestMonth;
 }
 
 export function getTodayCalendarItem(calendar: RawCalendarMonth[]) {
+  const month = getCurrentCalendarMonth(calendar);
+  if (!month) return null;
+
   const now = new Date();
   const day = String(now.getDate());
-  const month = getCurrentCalendarMonth(calendar);
-  return month?.days.find((item) => item.date === day) ?? null;
+  const exactMatch = month.days.find((item) => item.date === day);
+  if (exactMatch) return exactMatch;
+
+  let closestItem = month.days[0] ?? null;
+  let smallestDistance = Number.POSITIVE_INFINITY;
+
+  for (const item of month.days) {
+    const candidateDate = toCalendarDate(month, item.date);
+    if (!candidateDate) continue;
+    const distance = Math.abs(candidateDate.getTime() - now.getTime());
+    if (distance < smallestDistance) {
+      smallestDistance = distance;
+      closestItem = item;
+    }
+  }
+
+  if (closestItem) return closestItem;
+
+  return month.days.find((item) => item.dayOrder && item.dayOrder !== '-') ?? month.days[0] ?? null;
 }
 
 export function getUpcomingCalendarEvents(calendar: RawCalendarMonth[]) {

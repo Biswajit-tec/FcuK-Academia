@@ -2,7 +2,7 @@
 
 const inflightRequests = new Map<string, Promise<unknown>>();
 const responseCache = new Map<string, { expiresAt: number; data: unknown }>();
-const CLIENT_CACHE_TTL_MS = 15 * 1000;
+const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export class ApiError extends Error {
   status: number;
@@ -14,12 +14,25 @@ export class ApiError extends Error {
   }
 }
 
-export async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const requestKey = JSON.stringify({
+export function getRequestCacheKey(input: RequestInfo | URL, init?: RequestInit) {
+  return JSON.stringify({
     input: typeof input === 'string' ? input : input.toString(),
     method: init?.method ?? 'GET',
     body: typeof init?.body === 'string' ? init.body : null,
   });
+}
+
+export function peekCachedJson<T>(input: RequestInfo | URL, init?: RequestInit): T | null {
+  const cached = responseCache.get(getRequestCacheKey(input, init));
+  if (!cached || cached.expiresAt <= Date.now()) {
+    return null;
+  }
+
+  return cached.data as T;
+}
+
+export async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const requestKey = getRequestCacheKey(input, init);
 
   const cached = responseCache.get(requestKey);
   if (cached && cached.expiresAt > Date.now()) {

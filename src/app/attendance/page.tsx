@@ -6,6 +6,7 @@ import Image from 'next/image';
 import SubjectCard from '@/components/dashboard/SubjectCard';
 import GlowCard from '@/components/ui/GlowCard';
 import ProgressBar from '@/components/ui/ProgressBar';
+import CountUp from '@/components/ui/CountUp';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useUser } from '@/hooks/useUser';
 import { createAvatarUrl, getCriticalAttendance, getOverallAttendance } from '@/lib/academia-ui';
@@ -15,11 +16,11 @@ export default function AttendancePage() {
   const { user } = useUser();
   const overallAtt = getOverallAttendance(attendanceList);
   const critical = getCriticalAttendance(attendanceList);
+  const avatarUrl = createAvatarUrl(user?.name || 'SRM Student');
   const projected = attendanceList.length
     ? ((attendanceList.reduce((sum, item) => sum + (item.courseConducted - item.courseAbsent), 0) + 5) /
         (attendanceList.reduce((sum, item) => sum + item.courseConducted, 0) + 5)) * 100
     : 0;
-  const avatarUrl = createAvatarUrl(user?.name || 'SRM Student');
 
   return (
     <div className="flex flex-col gap-8 pb-32 pt-4">
@@ -36,7 +37,9 @@ export default function AttendancePage() {
         </div>
         <div className="relative z-10">
           <p className="font-label text-xs font-bold tracking-[0.2em] text-[#adaaaa] uppercase mb-1">OVERALL ATTENDANCE</p>
-          <span className="font-headline font-bold text-[7rem] leading-[0.85] tracking-tighter text-primary">{overallAtt.toFixed(1)}%</span>
+          <span className="font-headline font-bold text-[7rem] leading-[0.85] tracking-tighter text-primary">
+            {loading ? '0.0%' : <CountUp value={overallAtt} decimals={1} suffix="%" />}
+          </span>
         </div>
       </section>
 
@@ -44,12 +47,21 @@ export default function AttendancePage() {
         <div className="flex justify-between items-start">
           <div className="max-w-[60%]">
             <h3 className="font-headline text-2xl font-bold lowercase tracking-tighter text-error">you&apos;re cooked</h3>
-            <p className="font-body text-xs text-[#adaaaa] mt-1 pr-4">{critical ? 'below the 75% safety threshold' : 'all tracked courses are above threshold'}</p>
+            <p className="font-body text-xs text-[#adaaaa] mt-1 pr-4">
+              {critical ? `${critical.courseTitle.toLowerCase()} is below the 75% safety threshold` : 'all tracked courses are above threshold'}
+            </p>
           </div>
           <div className="text-right">
-            <span className="font-headline text-5xl font-bold text-error block leading-none">{critical ? Math.max(0, Math.ceil((3 * critical.courseConducted) - (4 * (critical.courseConducted - critical.courseAbsent)))) : 0}</span>
+            <span className="font-headline text-5xl font-bold text-error block leading-none">
+              {loading ? '0' : <CountUp value={critical ? Math.max(0, Math.ceil((3 * critical.courseConducted) - (4 * (critical.courseConducted - critical.courseAbsent)))) : 0} />}
+            </span>
             <span className="font-headline text-xl font-bold lowercase text-error block mt-1 leading-none">classes</span>
             <span className="font-label text-[10px] font-bold text-[#808080] uppercase tracking-widest block mt-2">TO RECOVER</span>
+            {critical ? (
+              <span className="font-body text-[11px] text-[#c6aaa4] mt-3 block max-w-[8rem] leading-tight">
+                {critical.courseTitle.toLowerCase()}
+              </span>
+            ) : null}
           </div>
         </div>
       </GlowCard>
@@ -62,7 +74,9 @@ export default function AttendancePage() {
         <div className="bg-[#121212] border border-[#2a2a2a] rounded-[28px] p-7 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           <div className="flex justify-between items-baseline mb-6">
             <span className="font-bold text-white lowercase">if you attend the next 5 classes...</span>
-            <span className="font-headline text-4xl font-bold tracking-tighter text-secondary">{projected.toFixed(1)}%</span>
+            <span className="font-headline text-4xl font-bold tracking-tighter text-secondary">
+              {loading ? '0.0%' : <CountUp value={projected} decimals={1} suffix="%" />}
+            </span>
           </div>
           <ProgressBar value={projected} color="var(--secondary)" showText={false} className="mb-8" />
           <div className="flex gap-4">

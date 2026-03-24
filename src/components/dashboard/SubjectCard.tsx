@@ -16,6 +16,16 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
   const marksPct = subject.marks.totalInternal > 0
     ? (subject.marks.internal / subject.marks.totalInternal) * 100
     : 0;
+  const attendanceMargin = Math.floor((subject.attendance.attended / 0.75) - subject.attendance.total);
+  const attendanceRequired = Math.ceil((0.75 * subject.attendance.total - subject.attendance.attended) / 0.25);
+  const attendancePillClass = attPct < 75
+    ? 'bg-[#3b1513] text-[#ff7d72] border border-[#6c2520]'
+    : attendanceMargin === 0
+      ? 'bg-[#1b2636] text-[#7fc4ff] border border-[#295377]'
+      : 'bg-[#112616] text-[#8df2a3] border border-[#1f5b2b]';
+  const attendancePillLabel = attPct < 75
+    ? `required: ${Math.max(0, attendanceRequired)}`
+    : `margin: ${Math.max(0, attendanceMargin)}`;
 
   // Derive glow colors from images
   let colorClass = 'text-primary';
@@ -48,6 +58,9 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
             <div>
               <h3 className="font-headline text-2xl font-bold lowercase text-white">{subject.name}</h3>
               <p className="font-label text-xs tracking-widest text-[#adaaaa] mt-1">{subject.attendance.attended} of {subject.attendance.total} sessions attended</p>
+              <span className={cn('inline-flex mt-3 rounded-full px-3 py-1 font-label text-[10px] font-bold tracking-widest uppercase', attendancePillClass)}>
+                {attendancePillLabel}
+              </span>
             </div>
             <span className={cn("font-headline text-3xl font-bold tracking-tighter", colorClass)}>
               {attPct.toFixed(1)}%

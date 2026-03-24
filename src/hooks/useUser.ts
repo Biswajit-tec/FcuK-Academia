@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 
-import { fetchJson, ApiError } from '@/lib/api/client';
+import { fetchJson, ApiError, peekCachedJson } from '@/lib/api/client';
 import type { DashboardData } from '@/lib/api/types';
 import { toUserProfile } from '@/lib/academia-ui';
 
 export function useUser() {
-  const [user, setUser] = useState<DashboardData['userInfo'] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedDashboard = peekCachedJson<DashboardData>('/api/dashboard');
+  const [user, setUser] = useState<DashboardData['userInfo'] | null>(cachedDashboard?.userInfo ?? null);
+  const [loading, setLoading] = useState(!cachedDashboard);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -14,7 +15,7 @@ export function useUser() {
 
     async function load() {
       try {
-        setLoading(true);
+        setLoading((current) => current && !cachedDashboard);
         setError(null);
         const data = await fetchJson<DashboardData>('/api/dashboard');
         if (!active) return;
@@ -31,7 +32,7 @@ export function useUser() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [cachedDashboard]);
 
   return {
     user,

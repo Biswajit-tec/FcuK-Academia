@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import CountUp from '@/components/ui/CountUp';
 import GlassCard from '@/components/ui/GlassCard';
 import { cn } from '@/lib/utils';
 import { useCalendar } from '@/hooks/useCalendar';
@@ -35,7 +36,9 @@ export default function CalendarPage() {
 
       <section className="mt-4">
         <span className="font-label text-[10px] font-bold tracking-[0.2em] text-[#808080] uppercase">CURRENT CYCLE</span>
-        <h1 className="font-headline text-[7.5rem] font-bold leading-[0.8] tracking-tighter text-white mt-4">day {today?.dayOrder || '--'}</h1>
+        <h1 className="font-headline text-[7.5rem] font-bold leading-[0.8] tracking-tighter text-white mt-4">
+          day {loading || !today?.dayOrder || today.dayOrder === '--' ? '--' : <CountUp value={Number(today.dayOrder)} />}
+        </h1>
         <p className="font-headline text-2xl font-semibold italic text-[#808080] mt-6">
           {today ? `${today.day.toLowerCase()}, ${currentMonth?.month.toLowerCase()} ${today.date}` : 'calendar syncing...'}
         </p>

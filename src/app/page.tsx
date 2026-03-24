@@ -2,8 +2,10 @@
 
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Bell, AlertTriangle } from 'lucide-react';
 
+import CountUp from '@/components/ui/CountUp';
 import { cn } from '@/lib/utils';
 import { createAvatarUrl, getAverageMarks, getNextClass, getOverallAttendance, getWeakestMark, getDayOrders, getUpcomingCalendarEvents } from '@/lib/academia-ui';
 import { useDashboard } from '@/hooks/useDashboard';
@@ -20,8 +22,22 @@ export default function HomePage() {
   const upcomingEvent = getUpcomingCalendarEvents(calendar)[0];
   const profileName = user?.name?.split(' ')[0]?.toLowerCase() || 'student';
   const avatarUrl = createAvatarUrl(user?.name || 'SRM Student');
+  const courseTitleMap = useMemo(
+    () => new Map(attendance.map((item) => [item.courseCode, item.courseTitle])),
+    [attendance],
+  );
 
-  const recentMarks = marks.filter((item) => item.total.maxMark > 0).slice(0, 3);
+  const recentMarks = useMemo(
+    () =>
+      marks
+        .filter((item) => item.total.maxMark > 0)
+        .slice(0, 3)
+        .map((item) => ({
+          ...item,
+          displayTitle: (courseTitleMap.get(item.course) || item.course).toLowerCase(),
+        })),
+    [courseTitleMap, marks],
+  );
 
   return (
     <div className="flex flex-col gap-10 pb-40 pt-4">
@@ -48,8 +64,10 @@ export default function HomePage() {
             key={num}
             onClick={() => setDayOrder(num)}
             className={cn(
-              'w-[4.4rem] h-[4.4rem] rounded-full font-headline text-2xl font-bold flex items-center justify-center transition-all',
-              dayOrder === num ? 'bg-primary text-[#1c1b18] shadow-[0_0_20px_rgba(182,255,0,0.5)]' : 'border-2 border-[#2c2c2c] text-[#808080]',
+              'w-11 h-11 shrink-0 rounded-full font-headline text-xl font-bold flex items-center justify-center transition-all',
+              dayOrder === num
+                ? 'bg-[#e0eab0] text-[#1c1b18] shadow-[0_0_15px_rgba(224,234,176,0.4)]'
+                : 'border-2 border-[#3a3a3a] text-[#808080] hover:border-white/20',
             )}
           >
             {num}
@@ -57,7 +75,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="relative mt-4">
+      <section className="relative mt-4 px-1 overflow-hidden">
         <div className="absolute right-0 top-0 opacity-[0.05] -z-10">
           <span className="font-headline text-[12rem] font-bold tracking-tighter leading-none">01</span>
         </div>
@@ -67,7 +85,7 @@ export default function HomePage() {
           <span className="font-label text-[9px] font-bold tracking-widest text-secondary uppercase">FIRST CLASS • SUBJECT</span>
         </div>
 
-        <h2 className="font-headline text-[5.2rem] font-bold text-primary leading-[0.85] tracking-tighter mt-6">
+        <h2 className="font-headline text-[clamp(3.8rem,21vw,5.2rem)] font-bold text-primary leading-[0.88] tracking-tighter mt-6 max-w-full [overflow-wrap:anywhere] break-words">
           {loading ? 'loading' : nextClass?.courseTitle?.toLowerCase() || 'no class'}
         </h2>
         <p className="font-headline text-2xl font-bold text-[#808080] mt-3 tracking-tight">{nextClass?.time || 'schedule unavailable'}</p>
@@ -76,14 +94,18 @@ export default function HomePage() {
       <section className="flex gap-4">
         <div className="bg-[#121212] rounded-[32px] p-7 flex-1 border border-white/5">
           <span className="font-label text-[9px] font-bold tracking-[0.2em] text-[#808080] uppercase">ATTENDANCE</span>
-          <div className="font-headline text-[2.8rem] font-bold text-primary mt-1 leading-none tracking-tighter">{overallAttendance.toFixed(1)}%</div>
+          <div className="font-headline text-[2.8rem] font-bold text-primary mt-1 leading-none tracking-tighter">
+            {loading ? '0.0%' : <CountUp value={overallAttendance} decimals={1} suffix="%" />}
+          </div>
           <div className="font-label text-[10px] font-bold tracking-widest text-secondary mt-3 uppercase">
             {overallAttendance >= 75 ? "you're safe" : 'recovery mode'}
           </div>
         </div>
         <div className="bg-[#121212] rounded-[32px] p-7 flex-1 border border-white/5">
           <span className="font-label text-[9px] font-bold tracking-[0.2em] text-[#808080] uppercase">AVG GRADE</span>
-          <div className="font-headline text-[2.8rem] font-bold text-white mt-1 leading-none tracking-tighter">{averageMarks.toFixed(1)}</div>
+          <div className="font-headline text-[2.8rem] font-bold text-white mt-1 leading-none tracking-tighter">
+            {loading ? '0.0' : <CountUp value={averageMarks} decimals={1} />}
+          </div>
           <div className="font-label text-[10px] font-bold tracking-widest text-[#808080] mt-3 uppercase">live internal average</div>
         </div>
       </section>
@@ -99,7 +121,9 @@ export default function HomePage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="font-headline text-2xl font-bold lowercase text-white">recent marks</h3>
-          <button className="font-label text-[10px] font-bold tracking-widest text-[#808080] uppercase border-b border-[#333] pb-0.5">VIEW ALL</button>
+          <Link href="/marks" className="font-label text-[10px] font-bold tracking-widest text-[#808080] uppercase border-b border-[#333] pb-0.5">
+            VIEW ALL
+          </Link>
         </div>
         {error ? <p className="text-sm text-error font-body">{error}</p> : null}
         <div className="flex flex-col gap-4">
@@ -122,9 +146,9 @@ export default function HomePage() {
 function MarkItem({ dotColor, title, score }: { dotColor: string; title: string; score: string }) {
   return (
     <div className="bg-[#121212] rounded-[24px] p-5 flex items-center justify-between border border-white/5">
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-4 pr-4">
         <div className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
-        <span className="font-headline text-lg font-bold text-white">{title}</span>
+        <span className="font-headline text-lg font-bold text-white leading-tight break-words">{title}</span>
       </div>
       <span className="font-headline text-xl font-bold text-white tracking-tighter">{score}</span>
     </div>

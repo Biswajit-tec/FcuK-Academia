@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { fetchJson, ApiError } from '@/lib/api/client';
+import { fetchJson, ApiError, peekCachedJson } from '@/lib/api/client';
 import type { DashboardData } from '@/lib/api/types';
 import { combineSubjects } from '@/lib/academia-ui';
 import type { RawAttendanceItem, RawMarkItem } from '@/lib/server/academia';
@@ -8,9 +8,10 @@ import type { RawAttendanceItem, RawMarkItem } from '@/lib/server/academia';
 const EMPTY_ATTENDANCE: RawAttendanceItem[] = [];
 
 export function useMarks(attendanceSeed: RawAttendanceItem[] = EMPTY_ATTENDANCE) {
-  const [markList, setMarkList] = useState<RawMarkItem[]>([]);
-  const [attendance, setAttendance] = useState<RawAttendanceItem[]>(attendanceSeed);
-  const [loading, setLoading] = useState(true);
+  const cachedDashboard = peekCachedJson<DashboardData>('/api/dashboard');
+  const [markList, setMarkList] = useState<RawMarkItem[]>(cachedDashboard?.markList ?? []);
+  const [attendance, setAttendance] = useState<RawAttendanceItem[]>(attendanceSeed.length ? attendanceSeed : (cachedDashboard?.attendance ?? attendanceSeed));
+  const [loading, setLoading] = useState(!cachedDashboard);
   const [error, setError] = useState<string | null>(null);
   const attendanceSeedKey = JSON.stringify(attendanceSeed);
   const resolvedAttendanceSeed = useMemo(
@@ -23,7 +24,7 @@ export function useMarks(attendanceSeed: RawAttendanceItem[] = EMPTY_ATTENDANCE)
 
     async function load() {
       try {
-        setLoading(true);
+        setLoading((current) => current && !cachedDashboard);
         setError(null);
         const data = await fetchJson<DashboardData>('/api/dashboard');
 
@@ -42,7 +43,7 @@ export function useMarks(attendanceSeed: RawAttendanceItem[] = EMPTY_ATTENDANCE)
     return () => {
       active = false;
     };
-  }, [attendanceSeedKey, resolvedAttendanceSeed]);
+  }, [attendanceSeedKey, cachedDashboard, resolvedAttendanceSeed]);
 
   const marks = useMemo(() => combineSubjects(attendance, markList), [attendance, markList]);
 

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { fetchJson, ApiError } from '@/lib/api/client';
+import { fetchJson, ApiError, peekCachedJson } from '@/lib/api/client';
 import type { DashboardData } from '@/lib/api/types';
 import { toTimetableEntries } from '@/lib/academia-ui';
 import type { RawTimetableItem } from '@/lib/server/academia';
 
 export function useTimetable() {
-  const [timetableRaw, setTimetableRaw] = useState<RawTimetableItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedDashboard = peekCachedJson<DashboardData>('/api/dashboard');
+  const [timetableRaw, setTimetableRaw] = useState<RawTimetableItem[]>(cachedDashboard?.timetable ?? []);
+  const [loading, setLoading] = useState(!cachedDashboard);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,7 +16,7 @@ export function useTimetable() {
 
     async function load() {
       try {
-        setLoading(true);
+        setLoading((current) => current && !cachedDashboard);
         setError(null);
         const data = await fetchJson<DashboardData>('/api/dashboard');
         if (!active) return;
@@ -32,7 +33,7 @@ export function useTimetable() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [cachedDashboard]);
 
   const timetable = useMemo(() => toTimetableEntries(timetableRaw), [timetableRaw]);
 

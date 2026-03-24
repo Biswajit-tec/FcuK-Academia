@@ -56,6 +56,7 @@ export interface VerifyPasswordResponse {
 export interface RawAttendanceItem {
   courseCode: string;
   courseTitle: string;
+  courseCredit: string;
   courseCategory: string;
   courseFaculty: string;
   courseSlot: string;
@@ -476,6 +477,7 @@ function parseAttendance(htmlContent: string | null, courseMap: Map<string, RawC
     items.push({
       courseCode,
       courseTitle: cleanText($(cols[1]).text()),
+      courseCredit: course?.courseCredit ?? '0',
       courseCategory: cleanText($(cols[2]).text()),
       courseFaculty: course?.courseFaculty ?? 'Unknown',
       courseSlot,
