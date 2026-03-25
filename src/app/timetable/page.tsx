@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 
 import AppHeader from '@/components/layout/AppHeader';
-import AppFooter from '@/components/layout/AppFooter';
 import DayOrderPills from '@/components/ui/DayOrderPills';
 import GlowCard from '@/components/ui/GlowCard';
 import { PageReveal, RevealItem, RevealText } from '@/components/ui/PageReveal';
@@ -116,10 +115,6 @@ export default function TimetablePage() {
           )}
         </div>
       </section>
-
-      <RevealItem>
-        <AppFooter />
-      </RevealItem>
     </PageReveal>
   );
 }

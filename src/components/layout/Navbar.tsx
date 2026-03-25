@@ -147,24 +147,19 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
 
   return (
     <nav
-      className="fixed bottom-4 left-1/2 z-50 w-[min(92%,28rem)] max-w-[28rem] -translate-x-1/2 px-1 pb-[max(env(safe-area-inset-bottom),0px)] sm:w-[min(92%,30rem)] sm:max-w-[30rem] lg:w-[min(88%,34rem)] lg:max-w-[34rem]"
+      className="fixed bottom-4 left-1/2 z-50 w-[min(92%,28rem)] max-w-[28rem] -translate-x-1/2 px-1 sm:w-[min(92%,30rem)] sm:max-w-[30rem] lg:w-[min(88%,34rem)] lg:max-w-[34rem]"
       aria-label="Primary"
     >
       <div
-        className="relative overflow-hidden rounded-[var(--radius-pill)] border px-3 py-3 backdrop-blur-[16px]"
+        className="relative overflow-hidden rounded-[var(--radius-pill)] border px-3 pt-3 backdrop-blur-[16px]"
         style={{
           borderColor: 'var(--card-border)',
           background: 'var(--nav-background)',
           boxShadow: 'var(--elevation-nav)',
+          paddingBottom: 'calc(0.75rem + max(env(safe-area-inset-bottom), 0px))',
         }}
       >
         <div className="pointer-events-none absolute inset-0 rounded-[inherit]" style={{ background: 'var(--surface-gradient)' }} />
-        <div
-          className="pointer-events-none absolute inset-x-10 -bottom-5 h-10 rounded-full blur-2xl"
-          style={{
-            background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 22%, transparent) 0%, color-mix(in srgb, var(--secondary) 12%, transparent) 42%, transparent 74%)',
-          }}
-        />
 
         <div className="relative grid grid-cols-6 items-center gap-1">
           {navItems.map((item) => {

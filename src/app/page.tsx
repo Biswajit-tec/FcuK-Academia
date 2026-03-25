@@ -11,7 +11,7 @@ import CountUp from '@/components/ui/CountUp';
 import TextType from '@/components/ui/TextType';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
-import { formatDayOrderNumber, getClassesForDay, getCurrentClassIndex, getDayOrders, getOverallAttendance, getScheduleSnapshot, getTotalMarks, getWeakestMark } from '@/lib/academia-ui';
+import { formatDayOrderNumber, getClassesForDay, getClassWindow, getCurrentClassIndex, getDayOrders, getOverallAttendance, getScheduleSnapshot, getTotalMarks, getWeakestMark } from '@/lib/academia-ui';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 
@@ -54,9 +54,8 @@ export default function HomePage() {
 
     const currentMinutes = (currentTime.getHours() * 60) + currentTime.getMinutes();
     const upcomingClass = classes.find((item) => {
-      const [hours, minutes] = item.time.split('-')[0]?.trim().split(':').map(Number) ?? [];
-      if (Number.isNaN(hours) || Number.isNaN(minutes)) return false;
-      return ((hours * 60) + minutes) > currentMinutes;
+      const window = getClassWindow(item);
+      return window !== null && window.start > currentMinutes;
     }) ?? null;
 
     if (upcomingClass) {

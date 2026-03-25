@@ -260,10 +260,14 @@ export function formatDayOrderNumber(dayOrder: number | null | undefined) {
 function parseTimeToMinutes(value: string) {
   const [hours, minutes] = value.split(':').map(Number);
   if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
-  return (hours * 60) + minutes;
+
+  // Academia slot strings omit AM/PM. Morning classes are 08:00-12:xx,
+  // while 01:xx-06:xx represent afternoon/evening slots.
+  const normalizedHours = hours >= 1 && hours < 8 ? hours + 12 : hours;
+  return (normalizedHours * 60) + minutes;
 }
 
-function getClassWindow(item: RawClassItem) {
+export function getClassWindow(item: RawClassItem) {
   const [startText = '', endText = ''] = item.time.split('-').map((part) => part.trim());
   const start = parseTimeToMinutes(startText);
   const end = parseTimeToMinutes(endText);
