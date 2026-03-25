@@ -4,7 +4,7 @@ import { getCachedDashboardData } from '@/lib/server/dashboard-cache';
 import { handleRouteError, requireSession } from '@/lib/server/route-utils';
 import { applySessionCookie } from '@/lib/server/session';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { sessionId, session, response: authResponse } = await requireSession();
     if (authResponse) return authResponse;
@@ -12,7 +12,8 @@ export async function GET() {
       return NextResponse.json({ error: 'session expired' }, { status: 401 });
     }
 
-    const result = await getCachedDashboardData(sessionId, session);
+    const forceRefresh = new URL(request.url).searchParams.get('refresh') === '1';
+    const result = await getCachedDashboardData(sessionId, session, { forceRefresh });
     if (!result.snapshot) {
       return NextResponse.json({ error: result.error || 'session expired' }, { status: 401 });
     }

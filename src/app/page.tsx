@@ -27,6 +27,7 @@ export default function HomePage() {
   const dayOrder = activeDayOrder && dayOrders.includes(activeDayOrder)
     ? activeDayOrder
     : dayOrders[0] || activeDayOrder || 1;
+  const backgroundDayOrder = String(dayOrder);
 
   const overallAttendance = getOverallAttendance(attendance);
   const totalMarks = getTotalMarks(marks);
@@ -97,7 +98,7 @@ export default function HomePage() {
       <RevealItem className="relative overflow-hidden px-1">
         <div className="pointer-events-none absolute right-0 top-0 -z-10 opacity-[0.08]">
           <span className="font-headline text-[12rem] font-bold leading-none tracking-tight text-on-surface">
-            01
+            {backgroundDayOrder}
           </span>
         </div>
 

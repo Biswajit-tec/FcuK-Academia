@@ -18,9 +18,10 @@ function isSnapshotUsable(snapshot: SessionSnapshot) {
   return hasName && hasCalendarMonth && (hasRealMarks || snapshot.markList.length === 0);
 }
 
-export async function getCachedDashboardData(sessionId: string, session: UserSession) {
+export async function getCachedDashboardData(sessionId: string, session: UserSession, options?: { forceRefresh?: boolean }) {
+  const forceRefresh = options?.forceRefresh ?? false;
   const cached = await getSessionSnapshot(sessionId);
-  if (cached && Date.now() - cached.updatedAt < SNAPSHOT_TTL_MS && isSnapshotUsable(cached)) {
+  if (!forceRefresh && cached && Date.now() - cached.updatedAt < SNAPSHOT_TTL_MS && isSnapshotUsable(cached)) {
     return {
       snapshot: cached,
       refreshed: false,

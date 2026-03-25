@@ -4,8 +4,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { GraduationCap, Shield, X } from 'lucide-react';
 import React, { useEffect } from 'react';
 
+import UserAvatar from '@/components/ui/UserAvatar';
 import { getInteractiveMotion } from '@/lib/motion';
 import { useTheme } from '@/context/ThemeContext';
+import { getCompactCourseLabel } from '@/lib/academia-ui';
 import type { DashboardData } from '@/lib/api/types';
 
 interface ProfileCardDialogProps {
@@ -17,10 +19,7 @@ interface ProfileCardDialogProps {
 export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDialogProps) {
   const { themeConfig } = useTheme();
   const motionProps = getInteractiveMotion(themeConfig.motion);
-  const initials = getInitials(user?.name || 'SRM Student');
-  const courseLabel = user?.program && user.program !== 'N/A'
-    ? user.program
-    : user?.department || 'Course not available';
+  const courseLabel = getCompactCourseLabel(user);
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +75,7 @@ export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDi
             }}
           >
             <div className="absolute left-1/2 top-0 z-10 h-5 w-20 -translate-x-1/2 rounded-b-[18px]" style={{ background: 'color-mix(in srgb, var(--surface-card-elevated) 90%, transparent)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)', borderBottom: '1px solid var(--card-border)' }} />
-            <div className="absolute left-6 right-6 top-5 z-0 h-28 rounded-[24px]" style={{ background: 'var(--hero-gradient)', opacity: 0.9 }} />
+            <div className="absolute left-5 right-5 top-5 z-0 h-28 rounded-[24px]" style={{ background: 'var(--hero-gradient)', opacity: 0.92 }} />
 
             <div className="relative z-10 flex flex-col gap-5 p-5">
               <div className="flex items-start justify-between gap-4">
@@ -99,9 +98,15 @@ export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDi
                 </motion.button>
               </div>
 
-              <div className="grid grid-cols-[auto,1fr] gap-4 rounded-[28px] border p-4" style={{ borderColor: 'var(--card-border)', background: 'var(--surface-card-soft)' }}>
-                <div className="flex h-20 w-20 items-center justify-center rounded-[24px] border font-headline text-2xl font-black text-primary" style={{ borderColor: 'color-mix(in srgb, var(--primary) 22%, transparent)', background: 'color-mix(in srgb, var(--surface-card-elevated) 90%, transparent)' }}>
-                  {initials}
+              <div
+                className="grid grid-cols-[auto,1fr] items-center gap-4 rounded-[28px] border p-4"
+                style={{
+                  borderColor: 'var(--card-border)',
+                  background: 'color-mix(in srgb, var(--surface-card-soft) 96%, transparent)',
+                }}
+              >
+                <div className="rounded-[24px] p-1" style={{ background: 'color-mix(in srgb, var(--surface-card-elevated) 88%, transparent)' }}>
+                  <UserAvatar size={80} />
                 </div>
                 <div className="min-w-0 space-y-3">
                   <div>
@@ -119,7 +124,7 @@ export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDi
 
               <div className="grid grid-cols-1 gap-3">
                 <InfoRow icon={GraduationCap} label="course" value={courseLabel} />
-                <InfoRow icon={Shield} label="department" value={user?.department || 'Not available'} />
+                <InfoRow icon={Shield} label="program" value={user?.program || 'Not available'} />
                 <InfoRow icon={Shield} label="section" value={user?.section || 'Not available'} />
               </div>
             </div>
@@ -168,14 +173,4 @@ function MiniInfo({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-semibold text-on-surface">{value}</p>
     </div>
   );
-}
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join('')
-    .toUpperCase();
 }

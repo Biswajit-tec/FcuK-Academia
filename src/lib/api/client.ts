@@ -31,6 +31,14 @@ export function peekCachedJson<T>(input: RequestInfo | URL, init?: RequestInit):
   return cached.data as T;
 }
 
+export function clearCachedJson(match?: string) {
+  for (const key of responseCache.keys()) {
+    if (!match || key.includes(match)) {
+      responseCache.delete(key);
+    }
+  }
+}
+
 export async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const requestKey = getRequestCacheKey(input, init);
 

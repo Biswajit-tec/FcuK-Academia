@@ -1,19 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 
 import {
   getCalendarDayByKey,
+  getCalendarDayForDayOrder,
   getCalendarDayOrders,
   getCurrentCalendarMonth,
   getFirstCalendarDayWithDayOrder,
   getTodayCalendarItem,
 } from '@/lib/academia-ui';
-import { ApiError, fetchJson, peekCachedJson } from '@/lib/api/client';
-import type { CalendarResponse, DashboardData } from '@/lib/api/types';
 import type { RawCalendarMonth } from '@/lib/server/academia';
+import { useDashboardDataContext } from '@/context/DashboardDataContext';
 
-type DayOrderSource = 'calendar' | 'manual';
 type CalendarSelection = { month: string; date: string };
 
 interface AppStateContextType {
@@ -22,115 +21,94 @@ interface AppStateContextType {
   calendarError: string | null;
   activeDayOrder: number | null;
   availableDayOrders: number[];
-  dayOrderSource: DayOrderSource;
+  dayOrderSource: 'calendar';
   selectedCalendarDay: CalendarSelection | null;
   setSelectedCalendarDay: (selection: CalendarSelection, dayOrder?: number | null) => void;
   setActiveDayOrder: (dayOrder: number) => void;
-  clearManualDayOrder: () => void;
 }
 
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined);
 
+function getDefaultCalendarSelection(calendar: RawCalendarMonth[], activeDayOrder: number | null) {
+  const preferredMonth = getCurrentCalendarMonth(calendar)?.month ?? null;
+  const byActiveOrder = activeDayOrder
+    ? getCalendarDayForDayOrder(calendar, activeDayOrder, preferredMonth)
+    : null;
+  if (byActiveOrder) return byActiveOrder;
+
+  const currentMonth = getCurrentCalendarMonth(calendar);
+  const today = getTodayCalendarItem(calendar);
+  if (currentMonth && today) {
+    return { month: currentMonth.month, day: today };
+  }
+
+  return getFirstCalendarDayWithDayOrder(calendar);
+}
+
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
-  const cachedDashboard = peekCachedJson<DashboardData>('/api/dashboard');
-  const [calendar, setCalendar] = useState<RawCalendarMonth[]>(cachedDashboard?.calendar ?? []);
-  const [calendarLoading, setCalendarLoading] = useState(!cachedDashboard);
-  const [calendarError, setCalendarError] = useState<string | null>(null);
-  const [selectedCalendarDay, setSelectedCalendarDayState] = useState<CalendarSelection | null>(null);
-  const [calendarDayOrder, setCalendarDayOrder] = useState<number | null>(null);
-  const [manualDayOrder, setManualDayOrder] = useState<number | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadCalendar() {
-      try {
-        setCalendarLoading((current) => current && !cachedDashboard);
-        setCalendarError(null);
-        const data = await fetchJson<CalendarResponse>(`/api/calendar?ts=${Date.now()}`);
-        if (!active) return;
-        setCalendar(data.calendar);
-      } catch (error) {
-        if (!active) return;
-
-        if (cachedDashboard?.calendar?.length) {
-          setCalendar(cachedDashboard.calendar);
-          setCalendarError(null);
-        } else {
-          setCalendarError(error instanceof ApiError ? error.message : 'server error');
-        }
-      } finally {
-        if (active) setCalendarLoading(false);
-      }
-    }
-
-    loadCalendar();
-    return () => {
-      active = false;
-    };
-  }, [cachedDashboard]);
+  const {
+    calendar,
+    loading: calendarLoading,
+    error: calendarError,
+  } = useDashboardDataContext();
+  const [selectedCalendarDayState, setSelectedCalendarDayState] = useState<CalendarSelection | null>(null);
+  const [activeDayOrderState, setActiveDayOrderState] = useState<number | null>(null);
 
   const availableDayOrders = useMemo(() => getCalendarDayOrders(calendar), [calendar]);
-
-  useEffect(() => {
-    if (!calendar.length || selectedCalendarDay) return;
-
-    const currentMonth = getCurrentCalendarMonth(calendar);
-    const today = getTodayCalendarItem(calendar);
-    const fallback = today && currentMonth
-      ? { month: currentMonth.month, day: today }
-      : getFirstCalendarDayWithDayOrder(calendar);
-
-    if (!fallback) return;
-
-    setSelectedCalendarDayState({
-      month: fallback.month,
-      date: fallback.day.date,
-    });
-
-    const derivedDayOrder = Number(fallback.day.dayOrder);
-    if (!Number.isNaN(derivedDayOrder) && derivedDayOrder > 0) {
-      setCalendarDayOrder(derivedDayOrder);
+  const fallbackSelection = useMemo(
+    () => getDefaultCalendarSelection(calendar, activeDayOrderState),
+    [activeDayOrderState, calendar],
+  );
+  const selectedDay = useMemo(
+    () => (selectedCalendarDayState ? getCalendarDayByKey(calendar, selectedCalendarDayState) : null),
+    [calendar, selectedCalendarDayState],
+  );
+  const selectedCalendarDay = useMemo(() => {
+    if (selectedDay) {
+      return { month: selectedDay.month, date: selectedDay.day.date };
     }
-  }, [calendar, selectedCalendarDay]);
 
-  useEffect(() => {
-    if (!selectedCalendarDay || !calendar.length) return;
-
-    const resolved = getCalendarDayByKey(calendar, selectedCalendarDay);
-    if (!resolved) return;
-
-    const derivedDayOrder = Number(resolved.day.dayOrder);
-    if (!Number.isNaN(derivedDayOrder) && derivedDayOrder > 0 && manualDayOrder === null) {
-      setCalendarDayOrder(derivedDayOrder);
+    if (fallbackSelection) {
+      return { month: fallbackSelection.month, date: fallbackSelection.day.date };
     }
-  }, [calendar, manualDayOrder, selectedCalendarDay]);
 
-  useEffect(() => {
-    if (manualDayOrder === null || !availableDayOrders.length) return;
-    if (!availableDayOrders.includes(manualDayOrder)) {
-      setManualDayOrder(null);
+    return null;
+  }, [fallbackSelection, selectedDay]);
+  const activeDayOrder = useMemo(() => {
+    const selectedDayOrder = Number(selectedDay?.day.dayOrder);
+    if (!Number.isNaN(selectedDayOrder) && selectedDayOrder > 0) {
+      return selectedDayOrder;
     }
-  }, [availableDayOrders, manualDayOrder]);
 
-  const activeDayOrder = manualDayOrder ?? calendarDayOrder ?? availableDayOrders[0] ?? null;
+    if (activeDayOrderState !== null && availableDayOrders.includes(activeDayOrderState)) {
+      return activeDayOrderState;
+    }
+
+    const fallbackDayOrder = Number(fallbackSelection?.day.dayOrder);
+    if (!Number.isNaN(fallbackDayOrder) && fallbackDayOrder > 0) {
+      return fallbackDayOrder;
+    }
+
+    return null;
+  }, [activeDayOrderState, availableDayOrders, fallbackSelection, selectedDay]);
 
   function setSelectedCalendarDay(selection: CalendarSelection, dayOrder?: number | null) {
     setSelectedCalendarDayState(selection);
 
     if (typeof dayOrder === 'number' && dayOrder > 0) {
-      setCalendarDayOrder(dayOrder);
-      setManualDayOrder(null);
+      setActiveDayOrderState(dayOrder);
     }
   }
 
   function setActiveDayOrder(dayOrder: number) {
     if (Number.isNaN(dayOrder) || dayOrder <= 0) return;
-    setManualDayOrder(dayOrder);
-  }
 
-  function clearManualDayOrder() {
-    setManualDayOrder(null);
+    const preferredMonth = selectedCalendarDay?.month ?? getCurrentCalendarMonth(calendar)?.month ?? null;
+    const target = getCalendarDayForDayOrder(calendar, dayOrder, preferredMonth);
+    if (!target) return;
+
+    setSelectedCalendarDayState({ month: target.month, date: target.day.date });
+    setActiveDayOrderState(dayOrder);
   }
 
   return (
@@ -141,11 +119,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         calendarError,
         activeDayOrder,
         availableDayOrders,
-        dayOrderSource: manualDayOrder === null ? 'calendar' : 'manual',
+        dayOrderSource: 'calendar',
         selectedCalendarDay,
         setSelectedCalendarDay,
         setActiveDayOrder,
-        clearManualDayOrder,
       }}
     >
       {children}

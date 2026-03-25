@@ -7,6 +7,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 import ProfileCardDialog from '@/components/ui/ProfileCardDialog';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { useTheme } from '@/context/ThemeContext';
 import { getInteractiveMotion } from '@/lib/motion';
 import { useUser } from '@/hooks/useUser';
@@ -30,7 +31,6 @@ export default function AppHeader({
   const { user } = useUser();
   const motionProps = getInteractiveMotion(themeConfig.motion);
   const [profileOpen, setProfileOpen] = useState(false);
-  const initials = getInitials(user?.name || 'SRM Student');
 
   useEffect(() => {
     setProfileOpen(false);
@@ -59,11 +59,10 @@ export default function AppHeader({
         borderColor: 'var(--card-border)',
         boxShadow: 'var(--elevation-soft)',
         background: 'color-mix(in srgb, var(--surface-card) 84%, transparent)',
-        color: 'var(--primary)',
       }}
       aria-label="Open profile card"
     >
-      <span className="relative z-10">{initials}</span>
+      <UserAvatar size={44} />
       <span
         className="absolute inset-0 opacity-80"
         style={{ background: 'radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 58%)' }}
@@ -103,14 +102,4 @@ export default function AppHeader({
       <ProfileCardDialog open={profileOpen} onClose={() => setProfileOpen(false)} user={user} />
     </>
   );
-}
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join('')
-    .toUpperCase();
 }

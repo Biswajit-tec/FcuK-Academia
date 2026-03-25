@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useMemo, useState } from 'react';
-import { Bell, ChevronRight, LogOut, MoonStar, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
+import { Bell, ChevronRight, LogOut, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -10,20 +10,33 @@ import AppHeader from '@/components/layout/AppHeader';
 import DayOrderSelector from '@/components/settings/DayOrderSelector';
 import Button from '@/components/ui/Button';
 import GlassCard from '@/components/ui/GlassCard';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { useAppState } from '@/context/AppStateContext';
+import { useDashboardDataContext } from '@/context/DashboardDataContext';
 import { useTheme } from '@/context/ThemeContext';
+import { getCompactCourseLabel } from '@/lib/academia-ui';
 import { getInteractiveMotion } from '@/lib/motion';
 import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
 
+const privacyNotes = [
+  'We do not store your data in any database.',
+  'Your credentials are processed locally inside your session.',
+  'Attendance, timetable, and calendar data are fetched live from your college portal.',
+  'Local caching is only used to keep the app responsive.',
+  'Clearing your browser data removes every locally stored detail.',
+];
+
 export default function SettingsPage() {
   const { themeConfig } = useTheme();
   const { user, loading } = useUser();
-  const { activeDayOrder, dayOrderSource } = useAppState();
+  const { refreshing, refreshDashboard } = useDashboardDataContext();
+  const { activeDayOrder } = useAppState();
   const router = useRouter();
   const motionProps = getInteractiveMotion(themeConfig.motion);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const compactCourse = getCompactCourseLabel(user);
 
   const syncLabel = useMemo(() => {
     if (loading) return 'live sync';
@@ -38,6 +51,13 @@ export default function SettingsPage() {
     router.refresh();
   }
 
+  async function handleSync() {
+    if (refreshing) return;
+
+    await refreshDashboard();
+    router.refresh();
+  }
+
   return (
     <div className="space-y-7 pb-36 pt-4">
       <AppHeader />
@@ -49,21 +69,26 @@ export default function SettingsPage() {
         </h1>
       </section>
 
-      <GlassCard className="space-y-6 p-6">
-        <div className="space-y-1.5">
-          <p className="theme-kicker">profile</p>
-          <h2 className="font-headline text-2xl font-bold text-on-surface">
-            {user?.name || 'Live SRM session'}
-          </h2>
-          <p className="text-sm leading-5 text-on-surface-variant">
-            {user ? `${user.regNumber} / ${user.department}` : 'Live account details appear here.'}
-          </p>
+      <GlassCard className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="rounded-[24px] p-1.5" style={{ background: 'color-mix(in srgb, var(--surface-card-elevated) 92%, transparent)' }}>
+            <UserAvatar size={72} />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <p className="theme-kicker">profile</p>
+            <h2 className="font-headline text-2xl font-bold text-on-surface">
+              {user?.name || 'Live SRM session'}
+            </h2>
+            <p className="text-sm leading-5 text-on-surface-variant">
+              {user ? `${user.regNumber} / ${compactCourse}` : 'Live account details appear here.'}
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatTile label="theme" value={themeConfig.label} />
           <StatTile label="sync" value={syncLabel} />
-          <StatTile label="course" value={user?.program || 'Not available'} />
+          <StatTile label="course" value={compactCourse} />
           <StatTile label="day order" value={activeDayOrder ? `day ${activeDayOrder}` : 'not set'} />
         </div>
       </GlassCard>
@@ -129,29 +154,39 @@ export default function SettingsPage() {
             subtitle={themeConfig.label}
             motionProps={motionProps}
           />
-          <PreferenceRow
-            icon={MoonStar}
-            title="motion style"
-            subtitle={themeConfig.motion.id.replace(/-/g, ' ')}
-            motionProps={motionProps}
-          />
-          <PreferenceRow
-            icon={RefreshCw}
-            title="day-order source"
-            subtitle={dayOrderSource === 'calendar' ? 'calendar linked' : 'manual override'}
-            motionProps={motionProps}
-            tone={dayOrderSource === 'calendar' ? 'secondary' : 'primary'}
-          />
-          <PreferenceRow
-            icon={ShieldCheck}
-            title="privacy"
-            subtitle={user?.department || 'session and data'}
+          <SyncRow
+            syncing={refreshing}
+            onSync={handleSync}
             motionProps={motionProps}
           />
         </GlassCard>
       </section>
 
       <DayOrderSelector />
+
+      <section className="space-y-4">
+        <SectionHeading kicker="privacy" title="Privacy" />
+        <GlassCard className="space-y-3.5 p-5">
+          <div className="flex items-start gap-4">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border text-secondary"
+              style={{
+                borderColor: 'color-mix(in srgb, var(--secondary) 28%, transparent)',
+                background: 'color-mix(in srgb, var(--secondary) 12%, transparent)',
+              }}
+            >
+              <ShieldCheck size={18} />
+            </div>
+            <div className="space-y-2">
+              {privacyNotes.map((note) => (
+                <p key={note} className="text-sm leading-6 text-on-surface-variant">
+                  {note}
+                </p>
+              ))}
+            </div>
+          </div>
+        </GlassCard>
+      </section>
 
       <section className="space-y-4 pt-1">
         <Button variant="brutalist" fullWidth onClick={handleLogout} disabled={logoutLoading}>
@@ -331,6 +366,70 @@ function ToggleRow({
           }}
         />
       </div>
+    </motion.button>
+  );
+}
+
+function SyncRow({
+  syncing,
+  onSync,
+  motionProps,
+}: {
+  syncing: boolean;
+  onSync: () => Promise<void>;
+  motionProps: ReturnType<typeof getInteractiveMotion>;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={() => {
+        void onSync();
+      }}
+      whileHover={syncing ? undefined : motionProps.whileHover}
+      whileTap={syncing ? undefined : motionProps.whileTap}
+      transition={motionProps.transition}
+      disabled={syncing}
+      className="flex w-full items-center justify-between gap-4 rounded-[var(--radius-md)] border p-3.5 text-left disabled:cursor-not-allowed disabled:opacity-90"
+      style={{ borderColor: 'var(--card-border)', background: 'color-mix(in srgb, var(--surface-soft) 90%, transparent)' }}
+    >
+      <div className="flex items-center gap-4">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-[16px] border text-primary"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--primary) 28%, transparent)',
+            background: 'color-mix(in srgb, var(--primary) 12%, transparent)',
+          }}
+        >
+          <RefreshCw size={18} />
+        </div>
+        <div>
+          <h3 className="font-headline text-lg font-bold text-on-surface">sync</h3>
+          <p className="mt-1 text-[13px] leading-5 text-on-surface-variant">
+            Refresh attendance, timetable, calendar, and session data.
+          </p>
+        </div>
+      </div>
+
+      <motion.div
+        layout
+        className="inline-flex min-w-[108px] items-center justify-center gap-2 rounded-[var(--radius-pill)] px-4 py-2 font-label text-[10px] font-bold uppercase tracking-[0.22em]"
+        style={{
+          background: syncing
+            ? 'color-mix(in srgb, var(--secondary) 18%, transparent)'
+            : 'color-mix(in srgb, var(--primary) 18%, transparent)',
+          color: syncing ? 'var(--secondary)' : 'var(--primary)',
+          boxShadow: syncing ? 'var(--glow-secondary)' : 'none',
+        }}
+      >
+        <motion.span
+          animate={syncing ? { rotate: 360 } : { rotate: 0 }}
+          transition={syncing ? { duration: 0.9, repeat: Infinity, ease: 'linear' } : { duration: 0.2 }}
+          className="inline-flex"
+        >
+          <RefreshCw size={14} />
+        </motion.span>
+        <span>{syncing ? 'syncing...' : 'sync'}</span>
+      </motion.div>
     </motion.button>
   );
 }

@@ -8,11 +8,13 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import SubjectCard from '@/components/dashboard/SubjectCard';
 import GlowCard from '@/components/ui/GlowCard';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
+import { useAppState } from '@/context/AppStateContext';
 import { useAttendance } from '@/hooks/useAttendance';
 import { getCriticalAttendance, getOverallAttendance } from '@/lib/academia-ui';
 
 export default function AttendancePage() {
   const { attendance, attendanceList, loading, error } = useAttendance();
+  const { activeDayOrder } = useAppState();
   const overallAtt = getOverallAttendance(attendanceList);
   const critical = getCriticalAttendance(attendanceList);
   const sortedAttendance = useMemo(
@@ -29,6 +31,7 @@ export default function AttendancePage() {
     ? ((attendanceList.reduce((sum, item) => sum + (item.courseConducted - item.courseAbsent), 0) + 5) /
       (attendanceList.reduce((sum, item) => sum + item.courseConducted, 0) + 5)) * 100
     : 0;
+  const backgroundDayOrder = activeDayOrder ? String(activeDayOrder) : '--';
 
   return (
     <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
@@ -36,7 +39,7 @@ export default function AttendancePage() {
 
       <section className="relative mt-6">
         <div className="absolute left-0 top-[-1rem] z-0 select-none opacity-[0.08]">
-          <span className="font-headline text-[12rem] font-bold leading-none tracking-tight text-on-surface">04</span>
+          <span className="font-headline text-[12rem] font-bold leading-none tracking-tight text-on-surface">{backgroundDayOrder}</span>
         </div>
         <RevealHeading className="relative z-10">
           <p className="theme-kicker mb-2">overall attendance</p>

@@ -205,6 +205,29 @@ export function getCalendarDayByKey(calendar: RawCalendarMonth[], selection: { m
   return day ? { month: month.month, day } : null;
 }
 
+export function getCalendarDayForDayOrder(
+  calendar: RawCalendarMonth[],
+  dayOrder: number,
+  preferredMonth?: string | null,
+) {
+  if (Number.isNaN(dayOrder) || dayOrder <= 0) return null;
+
+  const target = String(dayOrder);
+  const prioritizedMonths = [
+    ...(preferredMonth ? calendar.filter((month) => month.month === preferredMonth) : []),
+    ...calendar.filter((month) => month.month !== preferredMonth),
+  ];
+
+  for (const month of prioritizedMonths) {
+    const day = month.days.find((item) => item.dayOrder === target);
+    if (day) {
+      return { month: month.month, day };
+    }
+  }
+
+  return null;
+}
+
 function parseCalendarMonthLabel(label: string) {
   const match = label.match(/([A-Za-z]{3,9})\s*'?\s*(\d{2,4})/);
   if (!match) return null;
@@ -291,6 +314,20 @@ export function getUpcomingCalendarEvents(calendar: RawCalendarMonth[]) {
 
 export function formatMonthTitle(month: string) {
   return month.replace(/'/g, ' 20');
+}
+
+export function getCompactCourseLabel(userInfo?: RawUserInfo | null) {
+  const candidates = [userInfo?.department, userInfo?.program]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value) && value !== 'N/A');
+
+  for (const value of candidates) {
+    if (/computer science and engineering/i.test(value) && /(?:software engineering|\bse\b|\bswe\b)/i.test(value)) {
+      return 'CSE w/s SWE';
+    }
+  }
+
+  return candidates[0] ?? 'Course not available';
 }
 
 export function inferGrade(percentage: number) {

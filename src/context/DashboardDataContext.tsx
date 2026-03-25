@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { ApiError, fetchJson, peekCachedJson } from '@/lib/api/client';
+import { ApiError, clearCachedJson, fetchJson, peekCachedJson } from '@/lib/api/client';
 import type { DashboardData } from '@/lib/api/types';
 import type { RawAttendanceItem, RawCalendarMonth, RawMarkItem, RawTimetableItem, RawUserInfo } from '@/lib/server/academia';
 
@@ -13,7 +13,9 @@ interface DashboardDataContextValue {
   timetable: RawTimetableItem[];
   calendar: RawCalendarMonth[];
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
+  refreshDashboard: () => Promise<void>;
 }
 
 const DashboardDataContext = createContext<DashboardDataContextValue | undefined>(undefined);
@@ -26,12 +28,59 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
   const [timetable, setTimetable] = useState<RawTimetableItem[]>(cachedDashboard?.timetable ?? []);
   const [calendar, setCalendar] = useState<RawCalendarMonth[]>(cachedDashboard?.calendar ?? []);
   const [loading, setLoading] = useState(!cachedDashboard);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function loadDashboard(options?: { forceRefresh?: boolean; preserveLoading?: boolean }) {
+    const forceRefresh = options?.forceRefresh ?? false;
+    const preserveLoading = options?.preserveLoading ?? false;
+
+    try {
+      if (forceRefresh) {
+        setRefreshing(true);
+        clearCachedJson('/api/dashboard');
+        clearCachedJson('/api/calendar');
+      } else if (!preserveLoading) {
+        setLoading((current) => current && !cachedDashboard);
+      }
+
+      setError(null);
+
+      const query = forceRefresh
+        ? `/api/dashboard?refresh=1&ts=${Date.now()}`
+        : `/api/dashboard?ts=${Date.now()}`;
+      const data = await fetchJson<DashboardData>(query);
+
+      setUserInfo(data.userInfo);
+      setAttendance(data.attendance);
+      setMarkList(data.markList);
+      setTimetable(data.timetable);
+      setCalendar(data.calendar);
+    } catch (loadError) {
+      if (cachedDashboard) {
+        setUserInfo(cachedDashboard.userInfo);
+        setAttendance(cachedDashboard.attendance);
+        setMarkList(cachedDashboard.markList);
+        setTimetable(cachedDashboard.timetable);
+        setCalendar(cachedDashboard.calendar);
+        setError(null);
+      } else {
+        setError(loadError instanceof ApiError ? loadError.message : 'server error');
+      }
+    } finally {
+      if (!preserveLoading) {
+        setLoading(false);
+      }
+      if (forceRefresh) {
+        setRefreshing(false);
+      }
+    }
+  }
 
   useEffect(() => {
     let active = true;
 
-    async function loadDashboard() {
+    async function hydrateDashboard() {
       try {
         setLoading((current) => current && !cachedDashboard);
         setError(null);
@@ -61,27 +110,26 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       }
     }
 
-    loadDashboard();
+    hydrateDashboard();
     return () => {
       active = false;
     };
   }, [cachedDashboard]);
 
-  const value = useMemo(
-    () => ({
-      userInfo,
-      attendance,
-      markList,
-      timetable,
-      calendar,
-      loading,
-      error,
-    }),
-    [attendance, calendar, error, loading, markList, timetable, userInfo],
-  );
-
   return (
-    <DashboardDataContext.Provider value={value}>
+    <DashboardDataContext.Provider
+      value={{
+        userInfo,
+        attendance,
+        markList,
+        timetable,
+        calendar,
+        loading,
+        refreshing,
+        error,
+        refreshDashboard: () => loadDashboard({ forceRefresh: true, preserveLoading: true }),
+      }}
+    >
       {children}
     </DashboardDataContext.Provider>
   );
