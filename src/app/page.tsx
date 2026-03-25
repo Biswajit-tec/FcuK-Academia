@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
 
 import AppHeader from '@/components/layout/AppHeader';
-import AppFooter from '@/components/layout/AppFooter';
+import HomeFooter from '@/components/layout/HomeFooter';
 import DayOrderPills from '@/components/ui/DayOrderPills';
 import CountUp from '@/components/ui/CountUp';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
@@ -200,7 +200,7 @@ export default function HomePage() {
       </section>
 
       <RevealItem>
-        <AppFooter />
+        <HomeFooter />
       </RevealItem>
     </PageReveal>
   );
