@@ -5,19 +5,21 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
-import { combineAttendanceSubjects } from '@/lib/academia-ui';
-import type { RawAttendanceItem } from '@/lib/server/academia';
+import { combineAttendanceSubjects, getClassesForDay, inferAttendanceComponent } from '@/lib/academia-ui';
+import type { RawAttendanceItem, RawCalendarMonth, RawTimetableItem } from '@/lib/server/academia';
 import type { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 type PredictionMode = 'leaves' | 'attending';
-type SelectionMode = 'single' | 'range';
 type ModalStep = 'picker' | 'results';
 
 interface AttendancePredictModalProps {
   open: boolean;
   attendanceList: RawAttendanceItem[];
+  calendar: RawCalendarMonth[];
+  timetable: RawTimetableItem[];
   loading?: boolean;
+  onApply: (subjects: Subject[]) => void;
   onClose: () => void;
 }
 
@@ -31,6 +33,7 @@ interface AttendancePredictionResult {
   required: number;
   conducted: number;
   attended: number;
+  sessionsAffected: number;
   accentColor: string;
   accentGlow: string;
 }
@@ -46,9 +49,33 @@ function formatDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function parseDateKey(key: string) {
-  const [year, month, day] = key.split('-').map(Number);
-  return new Date(year, (month || 1) - 1, day || 1);
+function parseCalendarMonthLabel(label: string) {
+  const match = label.match(/([A-Za-z]{3,9})\s*'?\s*(\d{2,4})/);
+  if (!match) return null;
+
+  const monthName = match[1];
+  const yearText = match[2];
+  const date = new Date(`${monthName} 1, ${yearText.length === 2 ? `20${yearText}` : yearText}`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getCalendarDateKey(monthLabel: string, dateText: string) {
+  const monthDate = parseCalendarMonthLabel(monthLabel);
+  const numericDate = Number(dateText);
+  if (!monthDate || Number.isNaN(numericDate)) return null;
+
+  return formatDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth(), numericDate));
+}
+
+function getDayOrderValue(dayOrder?: string) {
+  const numeric = Number(dayOrder);
+  return Number.isNaN(numeric) || numeric <= 0 ? null : numeric;
+}
+
+function isHolidayLike(event?: string) {
+  const normalized = (event || '').trim().toLowerCase();
+  if (!normalized || normalized === '-') return false;
+  return /(holiday|leave|vacation|break|festival|closed|no class)/i.test(normalized);
 }
 
 function isSameDay(left: Date, right: Date) {
@@ -61,20 +88,6 @@ function addDays(date: Date, value: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + value);
   return next;
-}
-
-function getRangeKeys(start: Date, end: Date) {
-  const normalizedStart = start <= end ? start : end;
-  const normalizedEnd = start <= end ? end : start;
-  const keys: string[] = [];
-  let cursor = new Date(normalizedStart);
-
-  while (cursor <= normalizedEnd) {
-    keys.push(formatDateKey(cursor));
-    cursor = addDays(cursor, 1);
-  }
-
-  return keys;
 }
 
 function getCalendarGrid(month: Date) {
@@ -91,15 +104,17 @@ function getCalendarGrid(month: Date) {
 
 function toPredictionResults(
   attendanceSubjects: Subject[],
-  totalDays: number,
+  sessionImpact: Record<string, number>,
   mode: PredictionMode,
 ): AttendancePredictionResult[] {
   return attendanceSubjects.map((item) => {
     const conducted = item.attendance.total;
     const attended = item.attendance.attended;
-    const newTotal = conducted + totalDays;
-    const newAttended = mode === 'attending' ? attended + totalDays : attended;
+    const sessions = sessionImpact[item.id] || 0;
+    const newTotal = conducted + sessions;
+    const newAttended = mode === 'attending' ? attended + sessions : attended;
     const newAttendance = newTotal ? (newAttended / newTotal) * 100 : 0;
+    const status: AttendancePredictionResult['status'] = newAttendance >= 75 ? 'safe' : 'danger';
     const margin = Math.max(0, Math.floor((newAttended / 0.75) - newTotal));
     const required = Math.max(0, Math.ceil(((0.75 * newTotal) - newAttended) / 0.25));
     let accentColor = 'var(--accent)';
@@ -121,14 +136,19 @@ function toPredictionResults(
       courseTitle: item.name,
       attendanceComponent: item.attendanceComponent ?? 'theory',
       attendance: newAttendance,
-      status: newAttendance >= 75 ? 'safe' : 'danger',
+      status,
       margin,
       required,
       conducted: newTotal,
       attended: newAttended,
+      sessionsAffected: sessions,
       accentColor,
       accentGlow,
     };
+  }).sort((left, right) => {
+    const leftScore = left.status === 'danger' ? left.required + 1000 : -left.margin;
+    const rightScore = right.status === 'danger' ? right.required + 1000 : -right.margin;
+    return rightScore - leftScore;
   });
 }
 
@@ -137,7 +157,10 @@ const weekdayLabels = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 function AttendancePredictModal({
   open,
   attendanceList,
+  calendar,
+  timetable,
   loading = false,
+  onApply,
   onClose,
 }: AttendancePredictModalProps) {
   const today = useMemo(() => {
@@ -146,9 +169,7 @@ function AttendancePredictModal({
   }, []);
   const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(today));
   const [predictionMode, setPredictionMode] = useState<PredictionMode>('leaves');
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>('single');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [step, setStep] = useState<ModalStep>('picker');
   const attendanceSubjects = useMemo(
     () => combineAttendanceSubjects(attendanceList).sort((left, right) => {
@@ -166,6 +187,51 @@ function AttendancePredictModal({
       return left.attendance.percentage - right.attendance.percentage;
     }),
     [attendanceList],
+  );
+  const calendarDayMap = useMemo(() => {
+    const entries = new Map<string, { dayOrder: number | null; disabled: boolean }>();
+
+    calendar.forEach((month) => {
+      month.days.forEach((day) => {
+        const key = getCalendarDateKey(month.month, day.date);
+        if (!key) return;
+
+        const weekday = (day.day || '').trim().toLowerCase();
+        const dayOrder = getDayOrderValue(day.dayOrder);
+        const disabled = weekday.startsWith('sat')
+          || weekday.startsWith('sun')
+          || dayOrder === null
+          || isHolidayLike(day.event);
+
+        entries.set(key, { dayOrder, disabled });
+      });
+    });
+
+    return entries;
+  }, [calendar]);
+  const sessionImpact = useMemo(() => {
+    const impact: Record<string, number> = {};
+
+    selectedKeys.forEach((dateKey) => {
+      const dayInfo = calendarDayMap.get(dateKey);
+      if (!dayInfo || dayInfo.disabled || dayInfo.dayOrder === null) return;
+      const dayOrder = dayInfo.dayOrder;
+
+      const classes = getClassesForDay(timetable, dayOrder);
+      classes.forEach((item) => {
+        if (!item.courseCode) return;
+        const component = inferAttendanceComponent(item.slot, item.courseCategory, item.courseType);
+        const subjectId = `${item.courseCode}-${component}`;
+        if (!attendanceSubjects.some((subject) => subject.id === subjectId)) return;
+        impact[subjectId] = (impact[subjectId] || 0) + 1;
+      });
+    });
+
+    return impact;
+  }, [attendanceSubjects, calendarDayMap, selectedKeys, timetable]);
+  const totalAffectedSessions = useMemo(
+    () => Object.values(sessionImpact).reduce((sum, value) => sum + value, 0),
+    [sessionImpact],
   );
 
   useEffect(() => {
@@ -187,8 +253,8 @@ function AttendancePredictModal({
   const calendarDays = useMemo(() => getCalendarGrid(visibleMonth), [visibleMonth]);
   const totalDaysSelected = selectedKeys.length;
   const results = useMemo(
-    () => toPredictionResults(attendanceSubjects, totalDaysSelected, predictionMode),
-    [attendanceSubjects, predictionMode, totalDaysSelected],
+    () => toPredictionResults(attendanceSubjects, sessionImpact, predictionMode),
+    [attendanceSubjects, predictionMode, sessionImpact],
   );
   const theoryResults = useMemo(
     () => results.filter((item) => item.attendanceComponent !== 'practical'),
@@ -198,12 +264,32 @@ function AttendancePredictModal({
     () => results.filter((item) => item.attendanceComponent === 'practical'),
     [results],
   );
+  const appliedSubjects = useMemo<Subject[]>(
+    () => results.map((item) => ({
+      id: `${item.courseCode}-${item.attendanceComponent}`,
+      name: item.courseTitle,
+      code: item.courseCode,
+      attendanceComponent: item.attendanceComponent,
+      teacher: 'faculty tba',
+      credits: 0,
+      attendance: {
+        attended: item.attended,
+        total: item.conducted,
+        percentage: item.attendance,
+      },
+      marks: {
+        internal: 0,
+        totalInternal: 0,
+        exams: [],
+        grade: undefined,
+      },
+    })),
+    [results],
+  );
 
   function resetState() {
     setPredictionMode('leaves');
-    setSelectionMode('single');
     setSelectedKeys([]);
-    setRangeStart(null);
     setStep('picker');
     setVisibleMonth(getMonthStart(today));
   }
@@ -226,21 +312,10 @@ function AttendancePredictModal({
     if (normalizedDate < today) return;
 
     const key = formatDateKey(normalizedDate);
+    const dateMeta = calendarDayMap.get(key);
+    if (!dateMeta || dateMeta.disabled) return;
 
-    if (selectionMode === 'single') {
-      toggleSingleDate(key);
-      return;
-    }
-
-    if (!rangeStart) {
-      setRangeStart(key);
-      setSelectedKeys([key]);
-      return;
-    }
-
-    const keys = getRangeKeys(parseDateKey(rangeStart), normalizedDate);
-    setSelectedKeys(keys);
-    setRangeStart(null);
+    toggleSingleDate(key);
   }
 
   function showPreviousMonth() {
@@ -251,15 +326,14 @@ function AttendancePredictModal({
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
   }
 
-  function handleSelectionModeChange(mode: SelectionMode) {
-    setSelectionMode(mode);
-    setRangeStart(null);
-    setSelectedKeys([]);
-  }
-
   function handleConfirm() {
     if (!selectedKeys.length) return;
     setStep('results');
+  }
+
+  function handleApply() {
+    onApply(appliedSubjects);
+    handleClose();
   }
 
   const actionLabel = predictionMode === 'leaves' ? 'leave days selected' : 'attending days selected';
@@ -298,7 +372,9 @@ function AttendancePredictModal({
                 <h2 className="mt-2 font-headline text-[2.6rem] font-bold leading-[0.9] tracking-tight text-on-surface">
                   PREDICT
                 </h2>
-                <p className="mt-2 text-sm text-on-surface-variant">plan your leaves</p>
+                <p className="mt-2 text-sm text-on-surface-variant">
+                  {predictionMode === 'leaves' ? 'plan your leaves' : 'plan your presence'}
+                </p>
               </div>
               <button
                 type="button"
@@ -339,19 +415,6 @@ function AttendancePredictModal({
                   })}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <SelectionButton
-                    active={selectionMode === 'single'}
-                    label="single day"
-                    onClick={() => handleSelectionModeChange('single')}
-                  />
-                  <SelectionButton
-                    active={selectionMode === 'range'}
-                    label="date range"
-                    onClick={() => handleSelectionModeChange('range')}
-                  />
-                </div>
-
                 <div
                   className="flex flex-none flex-col rounded-[32px] border p-5"
                   style={{
@@ -369,7 +432,7 @@ function AttendancePredictModal({
                         {visibleMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
                       </p>
                       <p className="mt-1 text-xs uppercase tracking-[0.2em] text-on-surface-variant">
-                        {selectionMode === 'range' && rangeStart ? 'select end date' : 'tap to select'}
+                        tap to select
                       </p>
                     </div>
                     <button type="button" onClick={showNextMonth} className="theme-icon-button flex items-center justify-center">
@@ -393,7 +456,8 @@ function AttendancePredictModal({
 
                       const key = formatDateKey(date);
                       const selected = selectedKeys.includes(key);
-                      const disabled = date < today;
+                      const dateMeta = calendarDayMap.get(key);
+                      const disabled = date < today || !dateMeta || dateMeta.disabled;
                       const isToday = isSameDay(date, today);
 
                       return (
@@ -443,6 +507,9 @@ function AttendancePredictModal({
                     <div>
                       <p className="theme-kicker">{actionLabel}</p>
                       <p className="mt-2 font-headline text-3xl font-bold text-on-surface">{totalDaysSelected}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                        {totalAffectedSessions} classes affected
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -472,7 +539,7 @@ function AttendancePredictModal({
                     <div>
                       <p className="theme-kicker">prediction summary</p>
                       <p className="mt-2 text-sm text-on-surface-variant">
-                        {totalDaysSelected} {predictionMode === 'leaves' ? 'future leave' : 'future attendance'} day{totalDaysSelected === 1 ? '' : 's'}
+                        {totalDaysSelected} date{totalDaysSelected === 1 ? '' : 's'} selected / {totalAffectedSessions} class session{totalAffectedSessions === 1 ? '' : 's'} affected
                       </p>
                     </div>
                     <button
@@ -507,11 +574,11 @@ function AttendancePredictModal({
                 >
                   <div className="flex items-center gap-3 text-on-surface-variant">
                     <CalendarDays size={18} className="text-primary" />
-                    <span className="text-sm">{selectedKeys.length} dates applied locally</span>
+                    <span className="text-sm">{selectedKeys.length} dates / {totalAffectedSessions} class sessions applied locally</span>
                   </div>
                   <button
                     type="button"
-                    onClick={handleClose}
+                    onClick={handleApply}
                     className="rounded-[18px] px-4 py-2 font-label text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-inverse)]"
                     style={{ background: 'var(--primary)', boxShadow: 'var(--glow-primary)' }}
                   >
@@ -528,40 +595,10 @@ function AttendancePredictModal({
   );
 }
 
-function SelectionButton({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-[22px] border px-4 py-3 font-label text-[10px] font-bold uppercase tracking-[0.18em] transition-all',
-        active ? 'text-primary shadow-[var(--glow-primary)]' : 'text-on-surface-variant',
-      )}
-      style={active ? {
-        background: 'color-mix(in srgb, var(--primary) 12%, transparent)',
-        borderColor: 'color-mix(in srgb, var(--primary) 26%, transparent)',
-      } : {
-        background: 'color-mix(in srgb, var(--surface-soft) 88%, transparent)',
-        borderColor: 'var(--border)',
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
 function PredictionCard({ item }: { item: AttendancePredictionResult }) {
   return (
     <div
-      className="relative rounded-[30px] border p-5"
+      className="relative overflow-hidden rounded-[30px] border p-5"
       style={{
         background: 'linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, var(--surface)) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%)',
         borderColor: 'color-mix(in srgb, var(--accent) 18%, var(--border))',

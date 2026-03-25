@@ -1,26 +1,40 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 
 import AppHeader from '@/components/layout/AppHeader';
 import AttendancePredictModal from '@/components/attendance/AttendancePredictModal';
 import CountUp from '@/components/ui/CountUp';
-import ProgressBar from '@/components/ui/ProgressBar';
 import SubjectCard from '@/components/dashboard/SubjectCard';
 import GlowCard from '@/components/ui/GlowCard';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
+import { useDashboardDataContext } from '@/context/DashboardDataContext';
 import { useAttendance } from '@/hooks/useAttendance';
-import { formatDayOrderNumber, getCriticalAttendance, getOverallAttendance } from '@/lib/academia-ui';
+import type { Subject } from '@/lib/types';
+import { formatDayOrderNumber } from '@/lib/academia-ui';
 
 export default function AttendancePage() {
   const { attendance, attendanceList, loading, error } = useAttendance();
+  const { calendar, timetable } = useDashboardDataContext();
   const { activeDayOrder } = useAppState();
   const [predictOpen, setPredictOpen] = useState(false);
-  const overallAtt = getOverallAttendance(attendanceList);
-  const critical = getCriticalAttendance(attendanceList);
+  const [predictedAttendance, setPredictedAttendance] = useState<Subject[] | null>(null);
+  const displayAttendance = predictedAttendance ?? attendance;
+  const overallAtt = useMemo(() => {
+    const totalConducted = displayAttendance.reduce((sum, item) => sum + item.attendance.total, 0);
+    const totalAttended = displayAttendance.reduce((sum, item) => sum + item.attendance.attended, 0);
+    return totalConducted ? (totalAttended / totalConducted) * 100 : 0;
+  }, [displayAttendance]);
+  const critical = useMemo(
+    () => [...displayAttendance]
+      .filter((item) => item.attendance.percentage < 75)
+      .sort((left, right) => left.attendance.percentage - right.attendance.percentage)[0] ?? null,
+    [displayAttendance],
+  );
   const sortedAttendance = useMemo(
-    () => [...attendance].sort((left, right) => {
+    () => [...displayAttendance].sort((left, right) => {
       const componentPriority = left.attendanceComponent === right.attendanceComponent
         ? 0
         : left.attendanceComponent === 'practical'
@@ -34,7 +48,7 @@ export default function AttendancePage() {
       if (leftPriority !== rightPriority) return leftPriority - rightPriority;
       return left.attendance.percentage - right.attendance.percentage;
     }),
-    [attendance],
+    [displayAttendance],
   );
   const theorySubjects = useMemo(
     () => sortedAttendance.filter((subject) => subject.attendanceComponent !== 'practical'),
@@ -44,10 +58,6 @@ export default function AttendancePage() {
     () => sortedAttendance.filter((subject) => subject.attendanceComponent === 'practical'),
     [sortedAttendance],
   );
-  const projected = attendanceList.length
-    ? ((attendanceList.reduce((sum, item) => sum + (item.courseConducted - item.courseAbsent), 0) + 5) /
-      (attendanceList.reduce((sum, item) => sum + item.courseConducted, 0) + 5)) * 100
-    : 0;
   const backgroundDayOrder = formatDayOrderNumber(activeDayOrder);
 
   return (
@@ -78,18 +88,18 @@ export default function AttendancePage() {
               <div className="max-w-[60%]">
                 <h3 className="font-headline text-2xl font-bold lowercase tracking-tight text-error">you&apos;re cooked</h3>
                 <p className="mt-1 pr-4 text-xs text-on-surface-variant">
-                  {critical ? `${critical.courseTitle.toLowerCase()} is below the 75% safety threshold` : 'all tracked courses are above threshold'}
+                  {critical ? `${critical.name.toLowerCase()} is below the 75% safety threshold` : 'all tracked courses are above threshold'}
                 </p>
               </div>
               <div className="text-right">
                 <span className="block font-headline text-5xl font-bold leading-none text-error">
-                  {loading ? '0' : <CountUp value={critical ? Math.max(0, Math.ceil((3 * critical.courseConducted) - (4 * (critical.courseConducted - critical.courseAbsent)))) : 0} />}
+                  {loading ? '0' : <CountUp value={critical ? Math.max(0, Math.ceil((0.75 * critical.attendance.total - critical.attendance.attended) / 0.25)) : 0} />}
                 </span>
                 <span className="mt-1 block font-headline text-xl font-bold lowercase leading-none text-error">classes</span>
                 <span className="mt-2 block font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">to recover</span>
                 {critical ? (
                   <span className="mt-3 block max-w-[8rem] text-[11px] leading-tight text-on-surface-variant">
-                    {critical.courseTitle.toLowerCase()}
+                    {critical.name.toLowerCase()}
                   </span>
                 ) : null}
               </div>
@@ -98,44 +108,21 @@ export default function AttendancePage() {
         </GlowCard>
       </RevealItem>
 
-      <section className="space-y-4 pt-2">
-        <RevealText className="flex items-end justify-between">
-          <h2 className="font-headline text-3xl font-bold lowercase tracking-tight text-on-surface">simulator</h2>
-          <span
-            className="rounded-full px-3 py-1 font-label text-[10px] font-bold uppercase tracking-widest text-primary"
-            style={{ background: 'color-mix(in srgb, var(--primary) 12%, transparent)' }}
-          >
-            beta access
-          </span>
-        </RevealText>
-        <RevealItem className="theme-card p-6">
-          <div className="mb-6 flex items-baseline justify-between gap-3">
-            <span className="font-body text-sm font-semibold lowercase text-on-surface">if you attend the next 5 classes...</span>
-            <span className="font-headline text-4xl font-bold tracking-tight text-secondary">
-              {loading ? '0.0%' : <CountUp value={projected} decimals={1} suffix="%" />}
-            </span>
-          </div>
-          <ProgressBar value={projected} color="var(--secondary)" showText={false} className="mb-6" />
-          <div className="grid grid-cols-2 gap-3">
-            <button type="button" className="theme-outline-button px-4 py-3 font-label text-[10px] font-bold uppercase tracking-widest">
-              + add session
-            </button>
-            <button type="button" className="theme-outline-button px-4 py-3 font-label text-[10px] font-bold uppercase tracking-widest">
-              - skip session
-            </button>
-          </div>
-        </RevealItem>
-      </section>
-
       <section className="space-y-6 pt-2">
         <RevealText className="flex items-center justify-between gap-3">
           <h2 className="font-headline text-3xl font-bold lowercase tracking-tight text-on-surface">breakdown</h2>
           <button
             type="button"
-            onClick={() => setPredictOpen(true)}
+            onClick={() => {
+              if (predictedAttendance) {
+                setPredictedAttendance(null);
+                return;
+              }
+              setPredictOpen(true);
+            }}
             className="theme-outline-button px-4 py-3 font-label text-[10px] font-bold uppercase tracking-widest"
           >
-            predict
+            {predictedAttendance ? <X size={14} /> : 'predict'}
           </button>
         </RevealText>
         {error ? <p className="text-sm text-error font-body">{error}</p> : null}
@@ -172,7 +159,10 @@ export default function AttendancePage() {
       <AttendancePredictModal
         open={predictOpen}
         attendanceList={attendanceList}
+        calendar={calendar}
+        timetable={timetable}
         loading={loading}
+        onApply={setPredictedAttendance}
         onClose={() => setPredictOpen(false)}
       />
     </PageReveal>

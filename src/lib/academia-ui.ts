@@ -99,12 +99,18 @@ export function combineSubjects(attendance: RawAttendanceItem[], marks: RawMarkI
   });
 }
 
-function getAttendanceComponent(courseSlot: string, courseCategory?: string) {
+export function inferAttendanceComponent(courseSlot: string, courseCategory?: string, courseType?: string) {
+  const normalizedType = (courseType || '').trim().toLowerCase();
   const normalizedSlot = (courseSlot || '').trim().toUpperCase();
   const normalizedCategory = (courseCategory || '').trim().toLowerCase();
 
+  if (normalizedType === 'practical' || normalizedType === 'lab') return 'practical' as const;
+  if (normalizedType === 'theory') return 'theory' as const;
   if (/^(P|L)/i.test(normalizedSlot) || normalizedSlot === 'LAB') return 'practical' as const;
-  if (/(practical|lab)/i.test(normalizedCategory)) return 'practical' as const;
+  if (/^(practical|lab)$/.test(normalizedCategory)) return 'practical' as const;
+  if (/(?:^|\s)(practical|laboratory|lab)(?:\s|$)/i.test(normalizedCategory) && !/theory/i.test(normalizedCategory)) {
+    return 'practical' as const;
+  }
   return 'theory' as const;
 }
 
@@ -122,7 +128,7 @@ export function combineAttendanceSubjects(attendance: RawAttendanceItem[]) {
   const courseComponentCounts = new Map<string, Set<'theory' | 'practical'>>();
 
   for (const item of attendance) {
-    const component = getAttendanceComponent(item.courseSlot, item.courseCategory);
+    const component = inferAttendanceComponent(item.courseSlot, item.courseCategory);
     const key = `${item.courseCode}:${component}`;
     const existing = groupedAttendance.get(key);
 
