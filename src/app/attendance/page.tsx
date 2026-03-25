@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import AppHeader from '@/components/layout/AppHeader';
+import AttendancePredictModal from '@/components/attendance/AttendancePredictModal';
 import CountUp from '@/components/ui/CountUp';
 import ProgressBar from '@/components/ui/ProgressBar';
 import SubjectCard from '@/components/dashboard/SubjectCard';
@@ -10,15 +11,23 @@ import GlowCard from '@/components/ui/GlowCard';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
 import { useAttendance } from '@/hooks/useAttendance';
-import { getCriticalAttendance, getOverallAttendance } from '@/lib/academia-ui';
+import { formatDayOrderNumber, getCriticalAttendance, getOverallAttendance } from '@/lib/academia-ui';
 
 export default function AttendancePage() {
   const { attendance, attendanceList, loading, error } = useAttendance();
   const { activeDayOrder } = useAppState();
+  const [predictOpen, setPredictOpen] = useState(false);
   const overallAtt = getOverallAttendance(attendanceList);
   const critical = getCriticalAttendance(attendanceList);
   const sortedAttendance = useMemo(
     () => [...attendance].sort((left, right) => {
+      const componentPriority = left.attendanceComponent === right.attendanceComponent
+        ? 0
+        : left.attendanceComponent === 'practical'
+          ? 1
+          : -1;
+      if (componentPriority !== 0) return componentPriority;
+
       const leftPriority = left.attendance.percentage < 75 ? 0 : 1;
       const rightPriority = right.attendance.percentage < 75 ? 0 : 1;
 
@@ -27,11 +36,19 @@ export default function AttendancePage() {
     }),
     [attendance],
   );
+  const theorySubjects = useMemo(
+    () => sortedAttendance.filter((subject) => subject.attendanceComponent !== 'practical'),
+    [sortedAttendance],
+  );
+  const practicalSubjects = useMemo(
+    () => sortedAttendance.filter((subject) => subject.attendanceComponent === 'practical'),
+    [sortedAttendance],
+  );
   const projected = attendanceList.length
     ? ((attendanceList.reduce((sum, item) => sum + (item.courseConducted - item.courseAbsent), 0) + 5) /
       (attendanceList.reduce((sum, item) => sum + item.courseConducted, 0) + 5)) * 100
     : 0;
-  const backgroundDayOrder = activeDayOrder ? String(activeDayOrder) : '--';
+  const backgroundDayOrder = formatDayOrderNumber(activeDayOrder);
 
   return (
     <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
@@ -111,8 +128,15 @@ export default function AttendancePage() {
       </section>
 
       <section className="space-y-6 pt-2">
-        <RevealText>
+        <RevealText className="flex items-center justify-between gap-3">
           <h2 className="font-headline text-3xl font-bold lowercase tracking-tight text-on-surface">breakdown</h2>
+          <button
+            type="button"
+            onClick={() => setPredictOpen(true)}
+            className="theme-outline-button px-4 py-3 font-label text-[10px] font-bold uppercase tracking-widest"
+          >
+            predict
+          </button>
         </RevealText>
         {error ? <p className="text-sm text-error font-body">{error}</p> : null}
         <div className="grid grid-cols-1 gap-6">
@@ -121,7 +145,7 @@ export default function AttendancePage() {
               {[1, 2, 3].map((i) => <div key={i} className="h-40 rounded-[28px] bg-surface" />)}
             </div>
           ) : (
-            sortedAttendance.map((subject, index) => (
+            theorySubjects.map((subject, index) => (
               <RevealItem key={`${subject.id}-${index}`}>
                 <SubjectCard subject={subject} type="attendance" />
               </RevealItem>
@@ -129,6 +153,28 @@ export default function AttendancePage() {
           )}
         </div>
       </section>
+
+      {practicalSubjects.length ? (
+        <section className="space-y-6 pt-2">
+          <RevealText>
+            <h2 className="font-headline text-3xl font-bold lowercase tracking-tight text-on-surface">practical</h2>
+          </RevealText>
+          <div className="grid grid-cols-1 gap-6">
+            {practicalSubjects.map((subject, index) => (
+              <RevealItem key={`${subject.id}-practical-${index}`}>
+                <SubjectCard subject={subject} type="attendance" />
+              </RevealItem>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <AttendancePredictModal
+        open={predictOpen}
+        attendanceList={attendanceList}
+        loading={loading}
+        onClose={() => setPredictOpen(false)}
+      />
     </PageReveal>
   );
 }

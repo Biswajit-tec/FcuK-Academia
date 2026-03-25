@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
 
 import AppHeader from '@/components/layout/AppHeader';
+import AppFooter from '@/components/layout/AppFooter';
 import DayOrderPills from '@/components/ui/DayOrderPills';
 import CountUp from '@/components/ui/CountUp';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
-import { getDayOrders, getNextClass, getOverallAttendance, getTotalMarks, getWeakestMark } from '@/lib/academia-ui';
+import { formatDayOrderNumber, getDayOrders, getOverallAttendance, getScheduleSnapshot, getTotalMarks, getWeakestMark } from '@/lib/academia-ui';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 
 export default function HomePage() {
   const { user, attendance, marks, timetable, loading, error } = useDashboard();
@@ -27,11 +29,21 @@ export default function HomePage() {
   const dayOrder = activeDayOrder && dayOrders.includes(activeDayOrder)
     ? activeDayOrder
     : dayOrders[0] || activeDayOrder || 1;
-  const backgroundDayOrder = String(dayOrder);
+  const currentTime = useCurrentTime();
 
   const overallAttendance = getOverallAttendance(attendance);
   const totalMarks = getTotalMarks(marks);
-  const nextClass = getNextClass(timetable, dayOrder);
+  const schedule = useMemo(
+    () => getScheduleSnapshot(timetable, dayOrder, dayOrders, currentTime),
+    [currentTime, dayOrder, dayOrders, timetable],
+  );
+  const featuredClass = schedule.classItem;
+  const backgroundDayOrder = formatDayOrderNumber(schedule.displayDayOrder ?? dayOrder);
+  const scheduleHeading = schedule.status === 'current'
+    ? 'current class / subject'
+    : schedule.status === 'tomorrow'
+      ? "tomorrow's first class"
+      : 'next class / subject';
   const weakestMark = getWeakestMark(marks);
   const firstName = user?.name?.split(' ')[0]?.trim() || 'student';
   const profileName = firstName ? `${firstName.charAt(0).toUpperCase()}${firstName.slice(1).toLowerCase()}` : 'Student';
@@ -110,14 +122,14 @@ export default function HomePage() {
           }}
         >
           <div className="h-1.5 w-1.5 rounded-full bg-secondary" />
-          <span className="font-label text-[9px] font-bold uppercase tracking-widest text-secondary">first class / subject</span>
+          <span className="font-label text-[9px] font-bold uppercase tracking-widest text-secondary">{scheduleHeading}</span>
         </div>
 
         <h2 className="mt-6 max-w-full break-words font-headline text-[clamp(3.4rem,21vw,5rem)] font-bold leading-[0.9] tracking-tight text-primary [overflow-wrap:anywhere]">
-          {loading ? 'loading' : nextClass?.courseTitle?.toLowerCase() || 'no class'}
+          {loading ? 'loading' : featuredClass?.courseTitle?.toLowerCase() || 'no class'}
         </h2>
         <p className="mt-3 font-headline text-2xl font-bold tracking-tight text-on-surface-variant">
-          {nextClass?.time || 'schedule unavailable'}
+          {featuredClass?.time || 'schedule unavailable'}
         </p>
       </RevealItem>
 
@@ -186,6 +198,10 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      <RevealItem>
+        <AppFooter />
+      </RevealItem>
     </PageReveal>
   );
 }

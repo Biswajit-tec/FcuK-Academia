@@ -2,6 +2,8 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
+  attendanceComponent?: 'theory' | 'practical';
+  courseGroupLabel?: string;
   teacher: string;
   credits: number;
   attendance: {

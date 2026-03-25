@@ -3,12 +3,14 @@
 import React, { useMemo } from 'react';
 
 import AppHeader from '@/components/layout/AppHeader';
+import AppFooter from '@/components/layout/AppFooter';
 import DayOrderPills from '@/components/ui/DayOrderPills';
 import GlowCard from '@/components/ui/GlowCard';
 import { PageReveal, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useTimetable } from '@/hooks/useTimetable';
-import { getClassesForDay, getDayOrders } from '@/lib/academia-ui';
+import { getClassesForDay, getCurrentClassIndex, getDayOrders } from '@/lib/academia-ui';
 import { cn } from '@/lib/utils';
 
 export default function TimetablePage() {
@@ -27,6 +29,11 @@ export default function TimetablePage() {
     ? activeDayOrder
     : dayOrders[0] || activeDayOrder || 1;
   const classes = getClassesForDay(timetableRaw, dayOrder);
+  const currentTime = useCurrentTime();
+  const highlightedClassIndex = useMemo(
+    () => getCurrentClassIndex(classes, currentTime),
+    [classes, currentTime],
+  );
 
   return (
     <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
@@ -53,7 +60,7 @@ export default function TimetablePage() {
             [1, 2, 3].map((item) => <div key={item} className="ml-8 h-36 rounded-[28px] bg-surface animate-pulse" />)
           ) : classes.length ? (
             classes.map((item, index) => {
-              const isPrimary = index === 2;
+              const isPrimary = index === highlightedClassIndex;
               const glow = index % 2 === 0 ? 'primary' : 'secondary';
 
               return (
@@ -109,6 +116,10 @@ export default function TimetablePage() {
           )}
         </div>
       </section>
+
+      <RevealItem>
+        <AppFooter />
+      </RevealItem>
     </PageReveal>
   );
 }

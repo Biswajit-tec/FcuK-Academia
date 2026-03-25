@@ -1,6 +1,15 @@
 import type { RawAttendanceItem, RawCalendarMonth, RawMarkItem, RawTimetableItem, RawUserInfo } from '@/lib/server/academia';
 import type { Subject, TimetableEntry, UserProfile } from '@/lib/types';
 
+type RawClassItem = RawTimetableItem['class'][number];
+
+export interface ScheduleSnapshot {
+  status: 'current' | 'upcoming' | 'tomorrow' | 'none';
+  classItem: RawClassItem | null;
+  activeDayOrder: number | null;
+  displayDayOrder: number | null;
+}
+
 export function createAvatarUrl(name: string) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'SRM Student')}&background=111111&color=b6ff00&bold=true`;
 }
@@ -90,6 +99,85 @@ export function combineSubjects(attendance: RawAttendanceItem[], marks: RawMarkI
   });
 }
 
+function getAttendanceComponent(courseSlot: string, courseCategory?: string) {
+  const normalizedSlot = (courseSlot || '').trim().toUpperCase();
+  const normalizedCategory = (courseCategory || '').trim().toLowerCase();
+
+  if (/^(P|L)/i.test(normalizedSlot) || normalizedSlot === 'LAB') return 'practical' as const;
+  if (/(practical|lab)/i.test(normalizedCategory)) return 'practical' as const;
+  return 'theory' as const;
+}
+
+function getAttendanceDisplayName(
+  courseTitle: string,
+  component: 'theory' | 'practical',
+  componentCount: number,
+) {
+  const normalizedTitle = courseTitle.toLowerCase();
+  return componentCount > 1 ? `${normalizedTitle} (${component})` : normalizedTitle;
+}
+
+export function combineAttendanceSubjects(attendance: RawAttendanceItem[]) {
+  const groupedAttendance = new Map<string, RawAttendanceItem>();
+  const courseComponentCounts = new Map<string, Set<'theory' | 'practical'>>();
+
+  for (const item of attendance) {
+    const component = getAttendanceComponent(item.courseSlot, item.courseCategory);
+    const key = `${item.courseCode}:${component}`;
+    const existing = groupedAttendance.get(key);
+
+    if (!courseComponentCounts.has(item.courseCode)) {
+      courseComponentCounts.set(item.courseCode, new Set());
+    }
+    courseComponentCounts.get(item.courseCode)?.add(component);
+
+    if (!existing) {
+      groupedAttendance.set(key, { ...item });
+      continue;
+    }
+
+    const conducted = existing.courseConducted + item.courseConducted;
+    const absent = existing.courseAbsent + item.courseAbsent;
+    groupedAttendance.set(key, {
+      ...existing,
+      courseConducted: conducted,
+      courseAbsent: absent,
+      courseAttendance: conducted ? (((conducted - absent) / conducted) * 100).toFixed(1) : '0',
+      courseFaculty: existing.courseFaculty || item.courseFaculty,
+      courseTitle: existing.courseTitle || item.courseTitle,
+      courseSlot: existing.courseSlot || item.courseSlot,
+      courseCategory: existing.courseCategory || item.courseCategory,
+    });
+  }
+
+  return [...groupedAttendance.entries()].map(([key, item]) => {
+    const component = key.endsWith(':practical') ? 'practical' as const : 'theory' as const;
+    const componentCount = courseComponentCounts.get(item.courseCode)?.size ?? 1;
+    const attended = Math.max(item.courseConducted - item.courseAbsent, 0);
+
+    return {
+      id: `${item.courseCode}-${component}`,
+      name: getAttendanceDisplayName(item.courseTitle, component, componentCount),
+      code: item.courseCode,
+      attendanceComponent: component,
+      courseGroupLabel: item.courseTitle.toLowerCase(),
+      teacher: item.courseFaculty || 'faculty tba',
+      credits: Number(item.courseCredit) || 0,
+      attendance: {
+        attended,
+        total: item.courseConducted,
+        percentage: Number(item.courseAttendance) || 0,
+      },
+      marks: {
+        internal: 0,
+        totalInternal: 0,
+        exams: [],
+        grade: undefined,
+      },
+    } satisfies Subject;
+  });
+}
+
 export function getOverallAttendance(attendance: RawAttendanceItem[]) {
   const conducted = attendance.reduce((sum, item) => sum + item.courseConducted, 0);
   const present = attendance.reduce((sum, item) => sum + Math.max(item.courseConducted - item.courseAbsent, 0), 0);
@@ -158,20 +246,91 @@ export function getClassesForDay(timetable: RawTimetableItem[], dayOrder: number
   return timetable.find((item) => Number(item.dayOrder) === dayOrder)?.class.filter((item) => item.isClass) ?? [];
 }
 
-export function getNextClass(timetable: RawTimetableItem[], dayOrder: number) {
-  const classes = getClassesForDay(timetable, dayOrder);
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+export function formatDayOrderNumber(dayOrder: number | null | undefined) {
+  if (!dayOrder || Number.isNaN(dayOrder) || dayOrder <= 0) return '--';
+  return dayOrder.toString().padStart(2, '0');
+}
 
-  for (const item of classes) {
-    const [startText] = item.time.split('-').map((part) => part.trim());
-    const [hours, minutes] = startText.split(':').map(Number);
-    if (Number.isNaN(hours) || Number.isNaN(minutes)) continue;
-    const start = hours * 60 + minutes;
-    if (start >= currentMinutes) return item;
+function parseTimeToMinutes(value: string) {
+  const [hours, minutes] = value.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return (hours * 60) + minutes;
+}
+
+function getClassWindow(item: RawClassItem) {
+  const [startText = '', endText = ''] = item.time.split('-').map((part) => part.trim());
+  const start = parseTimeToMinutes(startText);
+  const end = parseTimeToMinutes(endText);
+
+  if (start === null || end === null) return null;
+
+  return {
+    start,
+    end,
+  };
+}
+
+export function getCurrentClassIndex(classes: RawClassItem[], referenceDate = new Date()) {
+  const currentMinutes = (referenceDate.getHours() * 60) + referenceDate.getMinutes();
+
+  return classes.findIndex((item) => {
+    const window = getClassWindow(item);
+    if (!window) return false;
+    return currentMinutes >= window.start && currentMinutes < window.end;
+  });
+}
+
+export function getScheduleSnapshot(
+  timetable: RawTimetableItem[],
+  dayOrder: number,
+  orderedDayOrders?: number[],
+  referenceDate = new Date(),
+): ScheduleSnapshot {
+  const classes = getClassesForDay(timetable, dayOrder);
+  const currentMinutes = (referenceDate.getHours() * 60) + referenceDate.getMinutes();
+  const availableDayOrders = (orderedDayOrders?.length ? orderedDayOrders : getDayOrders(timetable))
+    .filter((value) => value > 0);
+
+  const currentIndex = getCurrentClassIndex(classes, referenceDate);
+  if (currentIndex >= 0) {
+    return {
+      status: 'current',
+      classItem: classes[currentIndex] ?? null,
+      activeDayOrder: dayOrder,
+      displayDayOrder: dayOrder,
+    };
   }
 
-  return classes[0] ?? null;
+  const upcomingClass = classes.find((item) => {
+    const window = getClassWindow(item);
+    return window !== null && window.start > currentMinutes;
+  }) ?? null;
+
+  if (upcomingClass) {
+    return {
+      status: 'upcoming',
+      classItem: upcomingClass,
+      activeDayOrder: dayOrder,
+      displayDayOrder: dayOrder,
+    };
+  }
+
+  const currentDayOrderIndex = availableDayOrders.indexOf(dayOrder);
+  const nextDayOrder = currentDayOrderIndex >= 0
+    ? availableDayOrders[(currentDayOrderIndex + 1) % availableDayOrders.length]
+    : availableDayOrders[0] ?? null;
+  const nextDayClasses = nextDayOrder ? getClassesForDay(timetable, nextDayOrder) : [];
+
+  return {
+    status: nextDayClasses.length ? 'tomorrow' : 'none',
+    classItem: nextDayClasses[0] ?? null,
+    activeDayOrder: dayOrder,
+    displayDayOrder: nextDayClasses.length ? nextDayOrder : dayOrder,
+  };
+}
+
+export function getNextClass(timetable: RawTimetableItem[], dayOrder: number) {
+  return getScheduleSnapshot(timetable, dayOrder).classItem;
 }
 
 export function flattenCalendar(calendar: RawCalendarMonth[]) {
