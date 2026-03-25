@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, startTransition, useCallback, useEffect, useState } from 'react';
+import React, { memo, startTransition, useCallback, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import HomePage from '@/app/page';
@@ -11,6 +11,7 @@ import SettingsPage from '@/app/settings/page';
 import TimetablePage from '@/app/timetable/page';
 import Navbar from '@/components/layout/Navbar';
 import SwipeContainer from '@/components/layout/SwipeContainer';
+import { navigateToTab, syncRouteTabPath, useActiveTabPath } from '@/components/layout/tab-navigation';
 import IntroOverlay from '@/components/ui/IntroOverlay';
 
 const HIDE_NAV_PATHS = ['/login'];
@@ -33,14 +34,14 @@ const TAB_SCREENS = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const activeTabPath = useActiveTabPath();
   const hideNav = HIDE_NAV_PATHS.includes(pathname);
   const isSwipeablePath = SWIPEABLE_PATHS.includes(pathname as typeof SWIPEABLE_PATHS[number]);
   const routePath = isSwipeablePath ? pathname as typeof SWIPEABLE_PATHS[number] : null;
-  const [optimisticPath, setOptimisticPath] = useState<typeof SWIPEABLE_PATHS[number] | null>(null);
-  const activePath = optimisticPath ?? routePath;
-  const swipeActivePath = activePath ?? SWIPEABLE_PATHS[0];
-  const activeTabIndex = SWIPEABLE_PATHS.indexOf(swipeActivePath);
-  const isSwipeableRoute = activePath !== null && activeTabIndex !== -1;
+  const swipeActivePath = routePath && SWIPEABLE_PATHS.includes(activeTabPath as typeof SWIPEABLE_PATHS[number])
+    ? activeTabPath as typeof SWIPEABLE_PATHS[number]
+    : routePath ?? SWIPEABLE_PATHS[0];
+  const isSwipeableRoute = routePath !== null;
   const navActivePath = pathname.startsWith('/settings') ? '/settings' : pathname;
 
   useEffect(() => {
@@ -50,31 +51,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    if (!optimisticPath) return;
-    if (routePath && optimisticPath !== routePath) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      setOptimisticPath(null);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-    };
-  }, [optimisticPath, routePath]);
+    if (!routePath) return;
+    syncRouteTabPath(routePath);
+  }, [routePath]);
 
   const navigateToPath = useCallback((nextPath: typeof SWIPEABLE_PATHS[number]) => {
-    if (!nextPath || nextPath === (activePath ?? navActivePath)) return;
-    setOptimisticPath(nextPath);
+    if (!nextPath || nextPath === pathname) return;
     startTransition(() => {
       router.replace(nextPath, { scroll: false });
     });
-  }, [activePath, navActivePath, router]);
+  }, [pathname, router]);
 
   const handleSwipeNavigate = useCallback((href: string) => {
     if (SWIPEABLE_PATHS.includes(href as typeof SWIPEABLE_PATHS[number])) {
       navigateToPath(href as typeof SWIPEABLE_PATHS[number]);
     }
   }, [navigateToPath]);
+
+  const handleNavbarNavigate = useCallback((href: string) => {
+    if (SWIPEABLE_PATHS.includes(href as typeof SWIPEABLE_PATHS[number])) {
+      navigateToTab(href as typeof SWIPEABLE_PATHS[number], { source: 'nav' });
+    }
+  }, []);
 
   if (hideNav) {
     return <>{children}</>;
@@ -93,7 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <Navbar
         activePath={isSwipeableRoute ? swipeActivePath : navActivePath}
-        onNavigate={isSwipeableRoute ? handleSwipeNavigate : undefined}
+        onNavigate={isSwipeableRoute ? handleNavbarNavigate : undefined}
       />
     </div>
   );

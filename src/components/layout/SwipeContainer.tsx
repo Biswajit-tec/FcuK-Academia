@@ -2,6 +2,7 @@
 
 import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import { registerTabNavigationController, setActiveTabPath } from '@/components/layout/tab-navigation';
 import { cn } from '@/lib/utils';
 
 interface SwipeScreen {
@@ -16,16 +17,17 @@ interface SwipeContainerProps {
 }
 
 const DIRECTION_LOCK_RATIO = 1.1;
+const NAV_TRANSITION_DURATION_MS = 250;
 
 function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const settleTimerRef = useRef<number | null>(null);
+  const navTimerRef = useRef<number | null>(null);
   const programmaticTargetIndexRef = useRef<number | null>(null);
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
   const gestureLockRef = useRef<'x' | 'y' | null>(null);
   const activeIndexRef = useRef(0);
-  const activePathRef = useRef(activePath);
   const [viewportWidth, setViewportWidth] = useState(0);
 
   const activeIndex = Math.max(0, screens.findIndex((screen) => screen.href === activePath));
@@ -34,18 +36,39 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
     document.body.classList.toggle('is-swiping', active);
   }, []);
 
-  useEffect(() => {
-    activePathRef.current = activePath;
-  }, [activePath]);
+  const toggleNavigationMode = useCallback((active: boolean) => {
+    document.body.classList.toggle('is-navigating', active);
+  }, []);
+
+  const clearNavigationMode = useCallback(() => {
+    if (navTimerRef.current !== null) {
+      window.clearTimeout(navTimerRef.current);
+      navTimerRef.current = null;
+    }
+
+    toggleNavigationMode(false);
+  }, [toggleNavigationMode]);
+
+  const scheduleNavigationModeReset = useCallback(() => {
+    if (navTimerRef.current !== null) {
+      window.clearTimeout(navTimerRef.current);
+    }
+
+    navTimerRef.current = window.setTimeout(() => {
+      navTimerRef.current = null;
+      toggleNavigationMode(false);
+    }, NAV_TRANSITION_DURATION_MS);
+  }, [toggleNavigationMode]);
 
   useEffect(() => {
     return () => {
       if (settleTimerRef.current !== null) {
         window.clearTimeout(settleTimerRef.current);
       }
+      clearNavigationMode();
       toggleSwipeMode(false);
     };
-  }, [toggleSwipeMode]);
+  }, [clearNavigationMode, toggleSwipeMode]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -66,19 +89,72 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
   }, []);
 
   useLayoutEffect(() => {
-    activeIndexRef.current = activeIndex;
     const node = containerRef.current;
     if (!node) return;
 
     const targetLeft = node.clientWidth * activeIndex;
-    if (Math.abs(node.scrollLeft - targetLeft) < 1) return;
-    programmaticTargetIndexRef.current = activeIndex;
+    const isAlreadySynced = activeIndexRef.current === activeIndex && Math.abs(node.scrollLeft - targetLeft) < 1;
+    if (isAlreadySynced) return;
 
-    node.scrollTo({
-      left: targetLeft,
-      behavior: 'smooth',
+    programmaticTargetIndexRef.current = activeIndex;
+    activeIndexRef.current = activeIndex;
+
+    window.requestAnimationFrame(() => {
+      node.scrollTo({
+        left: targetLeft,
+        behavior: 'auto',
+      });
     });
-  }, [activeIndex]);
+  }, [activeIndex, viewportWidth]);
+
+  useLayoutEffect(() => {
+    registerTabNavigationController({
+      navigateTo: (href, options) => {
+        const node = containerRef.current;
+        if (!node) return;
+
+        const nextIndex = screens.findIndex((screen) => screen.href === href);
+        if (nextIndex === -1) return;
+
+        const width = node.clientWidth || viewportWidth || 1;
+        const targetLeft = width * nextIndex;
+        const isAlreadyActive = activeIndexRef.current === nextIndex && Math.abs(node.scrollLeft - targetLeft) < 1;
+
+        if (isAlreadyActive) {
+          clearNavigationMode();
+          toggleSwipeMode(false);
+          return;
+        }
+
+        if (settleTimerRef.current !== null) {
+          window.clearTimeout(settleTimerRef.current);
+          settleTimerRef.current = null;
+        }
+
+        programmaticTargetIndexRef.current = nextIndex;
+        activeIndexRef.current = nextIndex;
+        toggleSwipeMode(true);
+
+        if (options?.source === 'nav' && !options.immediate) {
+          toggleNavigationMode(true);
+          scheduleNavigationModeReset();
+        } else {
+          clearNavigationMode();
+        }
+
+        window.requestAnimationFrame(() => {
+          node.scrollTo({
+            left: targetLeft,
+            behavior: options?.immediate ? 'auto' : 'smooth',
+          });
+        });
+      },
+    });
+
+    return () => {
+      registerTabNavigationController(null);
+    };
+  }, [clearNavigationMode, scheduleNavigationModeReset, screens, toggleNavigationMode, toggleSwipeMode, viewportWidth]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -89,6 +165,17 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
       const nextIndex = Math.max(0, Math.min(screens.length - 1, Math.round(node.scrollLeft / width)));
       const nextPath = screens[nextIndex]?.href;
       const programmaticTargetIndex = programmaticTargetIndexRef.current;
+      const commitNavigation = () => {
+        activeIndexRef.current = nextIndex;
+        programmaticTargetIndexRef.current = null;
+        toggleSwipeMode(false);
+        clearNavigationMode();
+
+        if (nextPath) {
+          setActiveTabPath(nextPath);
+          onNavigate(nextPath);
+        }
+      };
 
       if (programmaticTargetIndex !== null) {
         const targetLeft = width * programmaticTargetIndex;
@@ -96,25 +183,19 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
         const hasReachedTargetScreen = nextIndex === programmaticTargetIndex;
 
         if (isNearTarget || hasReachedTargetScreen) {
-          activeIndexRef.current = programmaticTargetIndex;
-          programmaticTargetIndexRef.current = null;
-          toggleSwipeMode(false);
+          commitNavigation();
           return;
         }
       }
 
-      activeIndexRef.current = nextIndex;
-      toggleSwipeMode(false);
-
-      if (nextPath && nextPath !== activePathRef.current) {
-        onNavigate(nextPath);
-      }
+      commitNavigation();
     };
 
     const handleTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0];
       if (!touch) return;
 
+      clearNavigationMode();
       programmaticTargetIndexRef.current = null;
       gestureLockRef.current = null;
       touchStartXRef.current = touch.clientX;
@@ -179,7 +260,7 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
         settleTimerRef.current = null;
       }
     };
-  }, [onNavigate, screens, toggleSwipeMode]);
+  }, [clearNavigationMode, onNavigate, screens, toggleSwipeMode]);
 
   return (
     <main
@@ -189,6 +270,8 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
+        willChange: 'transform',
+        transform: 'translate3d(0, 0, 0)',
       }}
     >
       {screens.map(({ href, Component }) => (

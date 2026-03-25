@@ -4,10 +4,11 @@ import React, { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { Home, BarChart2, CheckSquare, Clock, Calendar, Settings } from 'lucide-react';
+import { Home, BarChart2, CheckSquare, Clock, Calendar, Settings, type LucideIcon } from 'lucide-react';
 
 import { useTheme } from '@/context/ThemeContext';
 import { getInteractiveMotion } from '@/lib/motion';
+import type { ThemeMotionPreset } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -24,12 +25,117 @@ interface NavbarProps {
   onNavigate?: (href: string) => void;
 }
 
+interface NavItemButtonProps {
+  href: string;
+  icon: LucideIcon;
+  isActive: boolean;
+  label: string;
+  motionPreset: ThemeMotionPreset;
+  mounted: boolean;
+  onNavigate?: (href: string) => void;
+}
+
+const NavItemButton = memo(function NavItemButton({
+  href,
+  icon: Icon,
+  isActive,
+  label,
+  motionPreset,
+  mounted,
+  onNavigate,
+}: NavItemButtonProps) {
+  const motionProps = getInteractiveMotion(motionPreset);
+  const itemClassName = cn(
+    'relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ease-out',
+    isActive
+      ? 'scale-110 text-primary'
+      : 'scale-100 text-on-surface-variant',
+  );
+
+  const iconGlowClassName = cn(
+    'absolute inset-0 rounded-full transition-all duration-300 ease-out',
+    isActive
+      ? 'shadow-[var(--glow-primary)]'
+      : 'bg-transparent',
+  );
+
+  const iconHighlightClassName = cn(
+    'absolute inset-[1px] rounded-full transition-opacity duration-300',
+    isActive
+      ? 'opacity-100'
+      : 'opacity-0',
+  );
+
+  const iconClassName = cn(
+    'relative z-10 transition-all duration-300 ease-out',
+    isActive
+      ? ''
+      : 'drop-shadow-none',
+  );
+
+  const content = (
+    <>
+      <div
+        className={iconGlowClassName}
+        style={isActive ? { background: 'var(--hero-gradient)' } : undefined}
+      />
+      <div
+        className={iconHighlightClassName}
+        style={isActive ? { background: 'linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0) 100%)' } : undefined}
+      />
+      <Icon
+        size={22}
+        strokeWidth={isActive ? 2.5 : 2.1}
+        className={iconClassName}
+        style={isActive ? { filter: 'drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 64%, transparent))' } : undefined}
+      />
+    </>
+  );
+
+  const inner = mounted ? (
+    <motion.div
+      whileHover={motionProps.whileHover}
+      whileTap={motionProps.whileTap}
+      transition={motionProps.transition}
+      className={itemClassName}
+    >
+      {content}
+    </motion.div>
+  ) : (
+    <div className={itemClassName}>
+      {content}
+    </div>
+  );
+
+  if (onNavigate) {
+    return (
+      <button
+        type="button"
+        aria-label={label}
+        onClick={() => onNavigate(href)}
+        className="relative flex items-center justify-center bg-transparent"
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      className="relative flex items-center justify-center"
+    >
+      {inner}
+    </Link>
+  );
+});
+
 function Navbar({ activePath, onNavigate }: NavbarProps) {
   const pathname = usePathname();
   const { themeConfig } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const motionProps = getInteractiveMotion(themeConfig.motion);
-  const resolvedPath = activePath ?? pathname;
+  const resolvedPath = activePath ?? (pathname.startsWith('/settings') ? '/settings' : pathname);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -62,93 +168,17 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
 
         <div className="relative grid grid-cols-6 items-center gap-1">
           {navItems.map((item) => {
-            const isActive = resolvedPath === item.href;
-            const Icon = item.icon;
-            const itemClassName = cn(
-              'relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ease-out',
-              isActive
-                ? 'scale-110 text-primary'
-                : 'scale-100 text-on-surface-variant',
-            );
-
-            const iconGlowClassName = cn(
-              'absolute inset-0 rounded-full transition-all duration-300 ease-out',
-              isActive
-                ? 'shadow-[var(--glow-primary)]'
-                : 'bg-transparent',
-            );
-
-            const iconHighlightClassName = cn(
-              'absolute inset-[1px] rounded-full transition-opacity duration-300',
-              isActive
-                ? 'opacity-100'
-                : 'opacity-0',
-            );
-
-            const iconClassName = cn(
-              'relative z-10 transition-all duration-300 ease-out',
-              isActive
-                ? ''
-                : 'drop-shadow-none',
-            );
-
-            const content = (
-              <>
-                <div
-                  className={iconGlowClassName}
-                  style={isActive ? { background: 'var(--hero-gradient)' } : undefined}
-                />
-                <div
-                  className={iconHighlightClassName}
-                  style={isActive ? { background: 'linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0) 100%)' } : undefined}
-                />
-                <Icon
-                  size={22}
-                  strokeWidth={isActive ? 2.5 : 2.1}
-                  className={iconClassName}
-                  style={isActive ? { filter: 'drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 64%, transparent))' } : undefined}
-                />
-              </>
-            );
-
-            const inner = mounted ? (
-              <motion.div
-                whileHover={motionProps.whileHover}
-                whileTap={motionProps.whileTap}
-                transition={motionProps.transition}
-                className={itemClassName}
-              >
-                {content}
-              </motion.div>
-            ) : (
-              <div className={itemClassName}>
-                {content}
-              </div>
-            );
-
-            if (onNavigate) {
-              return (
-                <button
-                  key={item.href}
-                  type="button"
-                  aria-label={item.label}
-                  onClick={() => onNavigate(item.href)}
-                  className="relative flex items-center justify-center bg-transparent"
-                >
-                  {inner}
-                </button>
-              );
-            }
-
             return (
-              <Link
+              <NavItemButton
                 key={item.href}
                 href={item.href}
-                aria-label={item.label}
-                className="relative flex items-center justify-center"
-              >
-                {inner}
-              </Link>
+                icon={item.icon}
+                isActive={resolvedPath === item.href}
+                label={item.label}
+                motionPreset={themeConfig.motion}
+                mounted={mounted}
+                onNavigate={onNavigate}
+              />
             );
           })}
         </div>
