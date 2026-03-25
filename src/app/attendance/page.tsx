@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import AppHeader from '@/components/layout/AppHeader';
 import CountUp from '@/components/ui/CountUp';
@@ -8,15 +8,23 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import SubjectCard from '@/components/dashboard/SubjectCard';
 import GlowCard from '@/components/ui/GlowCard';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
-import { useAppState } from '@/context/AppStateContext';
 import { useAttendance } from '@/hooks/useAttendance';
 import { getCriticalAttendance, getOverallAttendance } from '@/lib/academia-ui';
 
 export default function AttendancePage() {
   const { attendance, attendanceList, loading, error } = useAttendance();
-  const { activeDayOrder, dayOrderSource } = useAppState();
   const overallAtt = getOverallAttendance(attendanceList);
   const critical = getCriticalAttendance(attendanceList);
+  const sortedAttendance = useMemo(
+    () => [...attendance].sort((left, right) => {
+      const leftPriority = left.attendance.percentage < 75 ? 0 : 1;
+      const rightPriority = right.attendance.percentage < 75 ? 0 : 1;
+
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+      return left.attendance.percentage - right.attendance.percentage;
+    }),
+    [attendance],
+  );
   const projected = attendanceList.length
     ? ((attendanceList.reduce((sum, item) => sum + (item.courseConducted - item.courseAbsent), 0) + 5) /
       (attendanceList.reduce((sum, item) => sum + item.courseConducted, 0) + 5)) * 100
@@ -25,26 +33,6 @@ export default function AttendancePage() {
   return (
     <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
       <AppHeader />
-
-      <RevealItem className="theme-card flex items-center justify-between gap-4 p-5">
-        <div>
-          <p className="theme-kicker">shared day order</p>
-          <p className="mt-2 font-headline text-2xl font-bold text-on-surface">
-            Day {activeDayOrder ?? '--'}
-          </p>
-        </div>
-        <span
-          className="rounded-[var(--radius-pill)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em]"
-          style={{
-            background: dayOrderSource === 'calendar'
-              ? 'color-mix(in srgb, var(--primary) 16%, transparent)'
-              : 'color-mix(in srgb, var(--secondary) 16%, transparent)',
-            color: dayOrderSource === 'calendar' ? 'var(--primary)' : 'var(--secondary)',
-          }}
-        >
-          {dayOrderSource}
-        </span>
-      </RevealItem>
 
       <section className="relative mt-6">
         <div className="absolute left-0 top-[-1rem] z-0 select-none opacity-[0.08]">
@@ -130,7 +118,7 @@ export default function AttendancePage() {
               {[1, 2, 3].map((i) => <div key={i} className="h-40 rounded-[28px] bg-surface" />)}
             </div>
           ) : (
-            attendance.map((subject, index) => (
+            sortedAttendance.map((subject, index) => (
               <RevealItem key={`${subject.id}-${index}`}>
                 <SubjectCard subject={subject} type="attendance" />
               </RevealItem>

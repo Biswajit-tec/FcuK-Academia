@@ -56,7 +56,7 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
 
   return (
     <div className={cn(
-      "theme-card relative flex flex-col gap-6 p-7 md:p-8",
+      "theme-card relative flex flex-col gap-4 p-5 md:p-6",
     )}>
       {/* Glow Left Edge Indicator */}
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
@@ -70,10 +70,10 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
         <>
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-headline text-2xl font-bold lowercase text-on-surface">{subject.name}</h3>
-              <p className="mt-1 font-label text-xs tracking-widest text-on-surface-variant">{subject.attendance.attended} of {subject.attendance.total} sessions attended</p>
+              <h3 className="font-headline text-xl font-bold lowercase leading-tight text-on-surface">{subject.name}</h3>
+              <p className="mt-1 font-label text-[11px] tracking-[0.16em] text-on-surface-variant">{subject.attendance.attended} of {subject.attendance.total} sessions attended</p>
               <span
-                className={cn('inline-flex mt-3 rounded-full border px-3 py-1 font-label text-[10px] font-bold tracking-widest uppercase', attendancePillClass)}
+                className={cn('inline-flex mt-2 rounded-full border px-2.5 py-1 font-label text-[9px] font-bold tracking-[0.18em] uppercase', attendancePillClass)}
                 style={
                   attPct < 75
                     ? {
@@ -94,7 +94,7 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
                 {attendancePillLabel}
               </span>
             </div>
-            <span className={cn("font-headline text-3xl font-bold tracking-tighter", colorClass)}>
+            <span className={cn("font-headline text-[2rem] font-bold tracking-tighter", colorClass)}>
               {attPct.toFixed(1)}%
             </span>
           </div>
@@ -104,9 +104,9 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
         // MARKS LAYOUT
         <>
           <div className="flex justify-between items-start">
-            <h3 className="max-w-[60%] font-headline text-3xl font-bold lowercase leading-tight text-on-surface">{subject.name}</h3>
+            <h3 className="max-w-[62%] font-headline text-[1.7rem] font-bold lowercase leading-[0.95] text-on-surface">{subject.name}</h3>
             <div
-              className="rounded-full px-4 py-1.5 font-label text-[10px] font-bold tracking-widest text-secondary"
+              className="rounded-full px-3 py-1 font-label text-[9px] font-bold tracking-[0.18em] text-secondary"
               style={{
                 background: 'color-mix(in srgb, var(--secondary) 12%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--secondary) 24%, transparent)',
@@ -122,7 +122,7 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
                 <div
                   key={`${exam.exam}-${index}`}
                   className={cn(
-                    'min-w-0 rounded-[18px] border px-2 py-3 text-center',
+                    'min-w-0 rounded-[16px] border px-2 py-2.5 text-center',
                     isPending
                       ? 'border-dashed bg-transparent'
                       : 'shadow-[var(--glow-primary)]',
@@ -132,13 +132,13 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
                     background: 'color-mix(in srgb, var(--primary) 10%, transparent)',
                   }}
                 >
-                  <p className={cn('font-label text-[10px] font-bold tracking-widest uppercase', isPending ? 'text-on-surface-variant' : 'text-primary/70')}>{exam.exam}</p>
+                  <p className={cn('font-label text-[9px] font-bold tracking-[0.16em] uppercase', isPending ? 'text-on-surface-variant' : 'text-primary/70')}>{exam.exam}</p>
                   {isPending ? (
-                    <p className="mt-3 font-headline text-[1.5rem] font-bold leading-none tracking-tighter text-on-surface-variant">TBA</p>
+                    <p className="mt-2 font-headline text-[1.2rem] font-bold leading-none tracking-tighter text-on-surface-variant">TBA</p>
                   ) : (
-                    <div className="mt-2 flex flex-col items-center">
-                      <p className="font-headline text-[1.4rem] font-bold leading-none tracking-tighter text-primary">{exam.obtained?.toFixed(2)}</p>
-                      <p className="mt-1 font-label text-[10px] font-bold tracking-widest text-primary/70">/ {exam.maxMark?.toFixed(2)}</p>
+                    <div className="mt-1.5 flex flex-col items-center">
+                      <p className="font-headline text-[1.15rem] font-bold leading-none tracking-tighter text-primary">{exam.obtained?.toFixed(2)}</p>
+                      <p className="mt-1 font-label text-[9px] font-bold tracking-[0.14em] text-primary/70">/ {exam.maxMark?.toFixed(2)}</p>
                     </div>
                   )}
                 </div>
@@ -146,8 +146,8 @@ export default function SubjectCard({ subject, type }: SubjectCardProps) {
             })}
           </div>
           <ProgressBar value={marksPct} color={hexColor} />
-          <div className="text-right mt-2">
-            <span className="inline-block font-headline text-6xl font-bold tracking-tighter text-on-surface">{subject.marks.internal.toFixed(2)}</span>
+          <div className="mt-1 text-right">
+            <span className="inline-block font-headline text-[3.2rem] font-bold leading-none tracking-tighter text-on-surface">{subject.marks.internal.toFixed(2)}</span>
           </div>
         </>
       )}

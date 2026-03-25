@@ -47,7 +47,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       try {
         setCalendarLoading((current) => current && !cachedDashboard);
         setCalendarError(null);
-        const data = await fetchJson<CalendarResponse>('/api/calendar');
+        const data = await fetchJson<CalendarResponse>(`/api/calendar?ts=${Date.now()}`);
         if (!active) return;
         setCalendar(data.calendar);
       } catch (error) {

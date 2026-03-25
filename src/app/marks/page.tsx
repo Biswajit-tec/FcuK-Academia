@@ -27,7 +27,7 @@ export default function MarksPage() {
   const probability = Math.min(97, Math.max(48, Math.round(percentage)));
 
   return (
-    <PageReveal className="flex flex-col gap-8 pb-32 pt-4">
+    <PageReveal className="flex flex-col gap-6 pb-28 pt-4">
       <AppHeader />
 
       <section className="mt-2 space-y-2">
@@ -108,7 +108,7 @@ export default function MarksPage() {
         </GlowCard>
       </RevealItem>
 
-      <RevealText className="mt-10 flex items-center justify-between">
+      <RevealText className="mt-6 flex items-center justify-between">
         <h2 className="font-headline text-4xl font-bold lowercase tracking-tight text-on-surface">academic breakdown</h2>
         <div className="theme-icon-button flex items-center justify-center">
           <ListFilter size={18} />
@@ -116,10 +116,10 @@ export default function MarksPage() {
       </RevealText>
 
       {error ? <p className="text-sm text-error font-body">{error}</p> : null}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         {loading ? (
-          <div className="animate-pulse space-y-4">
-            {[1, 2, 3].map((i) => <div key={i} className="h-40 rounded-[28px] bg-surface" />)}
+          <div className="animate-pulse space-y-3">
+            {[1, 2, 3].map((i) => <div key={i} className="h-32 rounded-[24px] bg-surface" />)}
           </div>
         ) : (
           marks.map((subject, index) => (

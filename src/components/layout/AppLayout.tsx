@@ -1,136 +1,205 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { startTransition, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
+import HomePage from '@/app/page';
+import AttendancePage from '@/app/attendance/page';
+import CalendarPage from '@/app/calendar/page';
+import MarksPage from '@/app/marks/page';
+import SettingsPage from '@/app/settings/page';
+import TimetablePage from '@/app/timetable/page';
 import Navbar from '@/components/layout/Navbar';
 import IntroOverlay from '@/components/ui/IntroOverlay';
-import { useTheme } from '@/context/ThemeContext';
-import { getPageMotion } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 const HIDE_NAV_PATHS = ['/login'];
 const SWIPEABLE_PATHS = ['/', '/marks', '/attendance', '/timetable', '/calendar', '/settings'] as const;
+const TAB_SCREENS = [
+  { href: '/', Component: HomePage },
+  { href: '/marks', Component: MarksPage },
+  { href: '/attendance', Component: AttendancePage },
+  { href: '/timetable', Component: TimetablePage },
+  { href: '/calendar', Component: CalendarPage },
+  { href: '/settings', Component: SettingsPage },
+] as const;
+const SWIPE_THRESHOLD_PX = 72;
+const SWIPE_VELOCITY_THRESHOLD = 0.35;
+const DIRECTION_LOCK_RATIO = 1.1;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { themeConfig } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [navigationDirection, setNavigationDirection] = useState(0);
-  const previousPathnameRef = useRef(pathname);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
   const touchStartTimeRef = useRef(0);
+  const gestureLockRef = useRef<'x' | 'y' | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const hideNav = HIDE_NAV_PATHS.includes(pathname);
-  const activeTabIndex = SWIPEABLE_PATHS.indexOf(pathname as typeof SWIPEABLE_PATHS[number]);
+  const isSwipeablePath = SWIPEABLE_PATHS.includes(pathname as typeof SWIPEABLE_PATHS[number]);
+  const routePath = isSwipeablePath ? pathname as typeof SWIPEABLE_PATHS[number] : '/';
+  const [optimisticPath, setOptimisticPath] = useState<typeof SWIPEABLE_PATHS[number] | null>(null);
+  const activePath = optimisticPath ?? routePath;
+  const activeTabIndex = SWIPEABLE_PATHS.indexOf(activePath);
   const isSwipeableRoute = activeTabIndex !== -1;
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setMounted(true);
+    SWIPEABLE_PATHS.forEach((path) => {
+      router.prefetch(path);
     });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
-    const previousPathname = previousPathnameRef.current;
-    if (previousPathname === pathname) return;
-
-    const previousIndex = SWIPEABLE_PATHS.indexOf(previousPathname as typeof SWIPEABLE_PATHS[number]);
-    const nextIndex = SWIPEABLE_PATHS.indexOf(pathname as typeof SWIPEABLE_PATHS[number]);
-    const inferredDirection = navigationDirection !== 0
-      ? navigationDirection
-      : previousIndex !== -1 && nextIndex !== -1 && previousIndex !== nextIndex
-        ? nextIndex > previousIndex ? 1 : -1
-        : 1;
+    if (!optimisticPath || optimisticPath !== routePath) return;
 
     const frame = window.requestAnimationFrame(() => {
-      setNavigationDirection(inferredDirection);
-      previousPathnameRef.current = pathname;
+      setOptimisticPath(null);
     });
-
-    const timer = window.setTimeout(() => {
-      setNavigationDirection(0);
-    }, 420);
 
     return () => {
       window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
     };
-  }, [navigationDirection, pathname]);
+  }, [optimisticPath, routePath]);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const updateWidth = () => {
+      setContainerWidth(node.clientWidth);
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isSwipeableRoute]);
 
   if (hideNav) {
     return <>{children}</>;
   }
 
-  function navigateToDirection(swipeDirection: 1 | -1) {
-    if (!isSwipeableRoute) return;
-    const nextIndex = activeTabIndex + swipeDirection;
-    const nextPath = SWIPEABLE_PATHS[nextIndex];
-
-    if (!nextPath || nextPath === pathname) return;
-
-    setNavigationDirection(swipeDirection);
-    router.push(nextPath);
+  function navigateToPath(nextPath: typeof SWIPEABLE_PATHS[number]) {
+    if (!nextPath || nextPath === activePath) return;
+    setOptimisticPath(nextPath);
+    setDragOffset(0);
+    setIsDragging(false);
+    startTransition(() => {
+      router.replace(nextPath, { scroll: false });
+    });
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
+    if (!isSwipeableRoute) return;
     const touch = event.touches[0];
     if (!touch) return;
+    gestureLockRef.current = null;
     touchStartXRef.current = touch.clientX;
     touchStartYRef.current = touch.clientY;
     touchStartTimeRef.current = performance.now();
+    setIsDragging(false);
   }
 
-  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+  function handleTouchMove(event: React.TouchEvent<HTMLElement>) {
     if (!isSwipeableRoute) return;
 
-    const touch = event.changedTouches[0];
+    const touch = event.touches[0];
     if (!touch) return;
 
     const deltaX = touch.clientX - touchStartXRef.current;
     const deltaY = touch.clientY - touchStartYRef.current;
-    const elapsed = Math.max(1, performance.now() - touchStartTimeRef.current);
-    const velocityX = Math.abs(deltaX / elapsed);
-    const swipeMotion = themeConfig.motion.swipe;
+    if (!gestureLockRef.current) {
+      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+      gestureLockRef.current = Math.abs(deltaX) > Math.abs(deltaY) * DIRECTION_LOCK_RATIO ? 'x' : 'y';
+    }
 
-    if (Math.abs(deltaX) < swipeMotion.threshold && velocityX < swipeMotion.velocityThreshold) return;
-    if (Math.abs(deltaX) <= Math.abs(deltaY) * 1.16) return;
+    if (gestureLockRef.current !== 'x') return;
 
-    navigateToDirection(deltaX < 0 ? 1 : -1);
+    const atFirstTab = activeTabIndex === 0 && deltaX > 0;
+    const atLastTab = activeTabIndex === SWIPEABLE_PATHS.length - 1 && deltaX < 0;
+    const resistedOffset = atFirstTab || atLastTab ? deltaX * 0.32 : deltaX;
+
+    setIsDragging(true);
+    setDragOffset(resistedOffset);
+    event.preventDefault();
   }
 
-  const pageMotion = getPageMotion(themeConfig.motion, navigationDirection);
+  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    if (!isSwipeableRoute) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const elapsed = Math.max(1, performance.now() - touchStartTimeRef.current);
+    const velocityX = Math.abs(deltaX / elapsed);
+
+    if (gestureLockRef.current === 'x' && (Math.abs(deltaX) > SWIPE_THRESHOLD_PX || velocityX > SWIPE_VELOCITY_THRESHOLD)) {
+      const nextIndex = activeTabIndex + (deltaX < 0 ? 1 : -1);
+      const nextPath = SWIPEABLE_PATHS[nextIndex];
+      if (nextPath) {
+        navigateToPath(nextPath);
+      }
+    }
+
+    gestureLockRef.current = null;
+    setIsDragging(false);
+    setDragOffset(0);
+  }
+
+  const translateX = containerWidth ? -(activeTabIndex * containerWidth) + dragOffset : dragOffset;
+
   return (
     <div className="relative mx-auto min-h-screen w-full max-w-[28rem] overflow-x-hidden pb-40 sm:max-w-[34rem] lg:max-w-[44rem] xl:max-w-[52rem]">
       <IntroOverlay />
 
-      {!mounted ? (
+      {isSwipeableRoute ? (
+        <main
+          ref={containerRef}
+          className="relative h-[calc(100dvh-9.5rem)] min-h-[calc(100dvh-9.5rem)] overflow-hidden"
+          style={{ touchAction: 'pan-y' }}
+        >
+          <div
+            className="flex h-full will-change-transform"
+            style={{
+              transform: `translate3d(${translateX}px, 0, 0)`,
+              transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+          >
+            {TAB_SCREENS.map(({ href, Component }) => (
+              <section
+                key={href}
+                aria-hidden={href !== activePath}
+                className={cn(
+                  'h-full shrink-0 overflow-y-auto overscroll-y-contain touch-pan-y px-4 pt-6 sm:px-6 sm:pt-8',
+                  href !== activePath && 'pointer-events-none',
+                )}
+                style={{ width: containerWidth ? `${containerWidth}px` : '100%' }}
+              >
+                <Component />
+              </section>
+            ))}
+          </div>
+        </main>
+      ) : (
         <main className="px-4 pt-6 sm:px-6 sm:pt-8">
           {children}
         </main>
-      ) : (
-        <AnimatePresence mode="wait" initial={false} custom={navigationDirection}>
-          <motion.main
-            key={pathname}
-            custom={navigationDirection}
-            initial={pageMotion.initial}
-            animate={pageMotion.animate}
-            exit={pageMotion.exit}
-            transition={pageMotion.transition}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className="relative min-h-[calc(100dvh-9.5rem)] touch-pan-y px-4 pt-6 will-change-transform sm:px-6 sm:pt-8"
-            style={{ touchAction: 'pan-y' }}
-          >
-            {children}
-          </motion.main>
-        </AnimatePresence>
       )}
 
-      <Navbar />
+      <Navbar
+        activePath={isSwipeableRoute ? activePath : pathname}
+        onNavigate={isSwipeableRoute ? (href) => navigateToPath(href as typeof SWIPEABLE_PATHS[number]) : undefined}
+      />
     </div>
   );
 }

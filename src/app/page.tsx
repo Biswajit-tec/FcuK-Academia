@@ -34,6 +34,22 @@ export default function HomePage() {
   const weakestMark = getWeakestMark(marks);
   const firstName = user?.name?.split(' ')[0]?.trim() || 'student';
   const profileName = firstName ? `${firstName.charAt(0).toUpperCase()}${firstName.slice(1).toLowerCase()}` : 'Student';
+  const greeting = useMemo(() => {
+    const greetings = [
+      `you made it, ${profileName}`,
+      `ready to suffer, ${profileName}?`,
+      `lock in, ${profileName}`,
+      `still alive, ${profileName}`,
+      `cooked yet, ${profileName}?`,
+      `FcuKed yet, ${profileName}?`,
+      `don't fail today, ${profileName}`,
+    ];
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const seed = `${profileName}-${todayKey}`;
+    const hash = Array.from(seed).reduce((total, char, index) => total + (char.charCodeAt(0) * (index + 1)), 0);
+
+    return greetings[hash % greetings.length];
+  }, [profileName]);
   const courseTitleMap = useMemo(
     () => new Map(attendance.map((item) => [item.courseCode, item.courseTitle])),
     [attendance],
@@ -64,7 +80,7 @@ export default function HomePage() {
         </RevealText>
         <RevealHeading>
           <h1 className="font-headline text-[3.6rem] font-bold leading-[0.84] tracking-tight text-on-surface">
-            sup, {profileName}
+            {greeting}
           </h1>
         </RevealHeading>
       </section>

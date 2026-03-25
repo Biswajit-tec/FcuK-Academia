@@ -1,40 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import { fetchJson, ApiError, peekCachedJson } from '@/lib/api/client';
-import type { DashboardData } from '@/lib/api/types';
+import { useDashboardDataContext } from '@/context/DashboardDataContext';
 import { toTimetableEntries } from '@/lib/academia-ui';
-import type { RawTimetableItem } from '@/lib/server/academia';
 
 export function useTimetable() {
-  const cachedDashboard = peekCachedJson<DashboardData>('/api/dashboard');
-  const [timetableRaw, setTimetableRaw] = useState<RawTimetableItem[]>(cachedDashboard?.timetable ?? []);
-  const [loading, setLoading] = useState(!cachedDashboard);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        setLoading((current) => current && !cachedDashboard);
-        setError(null);
-        const data = await fetchJson<DashboardData>('/api/dashboard');
-        if (!active) return;
-        setTimetableRaw(data.timetable);
-      } catch (err) {
-        if (!active) return;
-        setError(err instanceof ApiError ? err.message : 'server error');
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      active = false;
-    };
-  }, [cachedDashboard]);
-
+  const { timetable: timetableRaw, loading, error } = useDashboardDataContext();
   const timetable = useMemo(() => toTimetableEntries(timetableRaw), [timetableRaw]);
 
   return { timetable, timetableRaw, loading, error };

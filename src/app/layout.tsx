@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { AppStateProvider } from "@/context/AppStateContext";
+import { DashboardDataProvider } from "@/context/DashboardDataContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { getThemeBootstrapScript } from "@/lib/theme";
@@ -36,11 +37,13 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${inter.variable} antialiased`}
       >
         <ThemeProvider>
-          <AppStateProvider>
-            <AppLayout>
-              {children}
-            </AppLayout>
-          </AppStateProvider>
+          <DashboardDataProvider>
+            <AppStateProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </AppStateProvider>
+          </DashboardDataProvider>
         </ThemeProvider>
       </body>
     </html>

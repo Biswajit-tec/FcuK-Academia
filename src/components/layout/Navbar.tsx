@@ -19,11 +19,17 @@ const navItems = [
   { href: '/settings', icon: Settings, label: 'settings' },
 ];
 
-export default function Navbar() {
+interface NavbarProps {
+  activePath?: string;
+  onNavigate?: (href: string) => void;
+}
+
+export default function Navbar({ activePath, onNavigate }: NavbarProps) {
   const pathname = usePathname();
   const { themeConfig } = useTheme();
   const [mounted, setMounted] = useState(false);
   const motionProps = getInteractiveMotion(themeConfig.motion);
+  const resolvedPath = activePath ?? pathname;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -56,7 +62,7 @@ export default function Navbar() {
 
         <div className="relative grid grid-cols-6 items-center gap-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = resolvedPath === item.href;
             const Icon = item.icon;
             const itemClassName = cn(
               'relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ease-out',
@@ -105,6 +111,35 @@ export default function Navbar() {
               </>
             );
 
+            const inner = mounted ? (
+              <motion.div
+                whileHover={motionProps.whileHover}
+                whileTap={motionProps.whileTap}
+                transition={motionProps.transition}
+                className={itemClassName}
+              >
+                {content}
+              </motion.div>
+            ) : (
+              <div className={itemClassName}>
+                {content}
+              </div>
+            );
+
+            if (onNavigate) {
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  aria-label={item.label}
+                  onClick={() => onNavigate(item.href)}
+                  className="relative flex items-center justify-center bg-transparent"
+                >
+                  {inner}
+                </button>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
@@ -112,20 +147,7 @@ export default function Navbar() {
                 aria-label={item.label}
                 className="relative flex items-center justify-center"
               >
-                {mounted ? (
-                  <motion.div
-                    whileHover={motionProps.whileHover}
-                    whileTap={motionProps.whileTap}
-                    transition={motionProps.transition}
-                    className={itemClassName}
-                  >
-                    {content}
-                  </motion.div>
-                ) : (
-                  <div className={itemClassName}>
-                    {content}
-                  </div>
-                )}
+                {inner}
               </Link>
             );
           })}

@@ -1,49 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import { fetchJson, ApiError, peekCachedJson } from '@/lib/api/client';
-import type { DashboardData } from '@/lib/api/types';
+import { useDashboardDataContext } from '@/context/DashboardDataContext';
 import { combineSubjects } from '@/lib/academia-ui';
-import type { RawAttendanceItem, RawMarkItem } from '@/lib/server/academia';
+import type { RawAttendanceItem } from '@/lib/server/academia';
 
 const EMPTY_ATTENDANCE: RawAttendanceItem[] = [];
 
 export function useMarks(attendanceSeed: RawAttendanceItem[] = EMPTY_ATTENDANCE) {
-  const cachedDashboard = peekCachedJson<DashboardData>('/api/dashboard');
-  const [markList, setMarkList] = useState<RawMarkItem[]>(cachedDashboard?.markList ?? []);
-  const [attendance, setAttendance] = useState<RawAttendanceItem[]>(attendanceSeed.length ? attendanceSeed : (cachedDashboard?.attendance ?? attendanceSeed));
-  const [loading, setLoading] = useState(!cachedDashboard);
-  const [error, setError] = useState<string | null>(null);
+  const { attendance: dashboardAttendance, markList, loading, error } = useDashboardDataContext();
   const attendanceSeedKey = JSON.stringify(attendanceSeed);
-  const resolvedAttendanceSeed = useMemo(
-    () => JSON.parse(attendanceSeedKey) as RawAttendanceItem[],
-    [attendanceSeedKey],
-  );
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        setLoading((current) => current && !cachedDashboard);
-        setError(null);
-        const data = await fetchJson<DashboardData>('/api/dashboard');
-
-        if (!active) return;
-        setMarkList(data.markList);
-        setAttendance(resolvedAttendanceSeed.length ? resolvedAttendanceSeed : data.attendance);
-      } catch (err) {
-        if (!active) return;
-        setError(err instanceof ApiError ? err.message : 'server error');
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      active = false;
-    };
-  }, [attendanceSeedKey, cachedDashboard, resolvedAttendanceSeed]);
+  const resolvedAttendanceSeed = useMemo(() => JSON.parse(attendanceSeedKey) as RawAttendanceItem[], [attendanceSeedKey]);
+  const attendance = resolvedAttendanceSeed.length ? resolvedAttendanceSeed : dashboardAttendance;
 
   const marks = useMemo(() => combineSubjects(attendance, markList), [attendance, markList]);
 
