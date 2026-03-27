@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import AppHeader from '@/components/layout/AppHeader';
 import CountUp from '@/components/ui/CountUp';
 import GlassCard from '@/components/ui/GlassCard';
+import ThemedNumberText from '@/components/ui/ThemedNumberText';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
 import { cn } from '@/lib/utils';
@@ -97,6 +98,10 @@ export default function CalendarPage() {
       null
     );
   }, [activeMonth, selectedDayKey]);
+  const todayDayKey = useMemo(() => {
+    if (!activeMonth || !derivedToday || activeMonth.month !== derivedCurrentMonth?.month) return null;
+    return getDayKey(activeMonth.month, derivedToday.date);
+  }, [activeMonth, derivedCurrentMonth?.month, derivedToday]);
 
   const monthEventItems = useMemo(() => {
     if (!activeMonth) return [];
@@ -151,7 +156,7 @@ export default function CalendarPage() {
             <span className="text-primary">
               {loading || !selectedDay?.dayOrder || selectedDay.dayOrder === '--' || Number.isNaN(Number(selectedDay.dayOrder))
                 ? '--'
-                : <CountUp value={Number(selectedDay.dayOrder)} />}
+                : <CountUp value={Number(selectedDay.dayOrder)} renderFormatted={(formatted) => <ThemedNumberText value={formatted} />} />}
             </span>
           </h1>
         </RevealHeading>
@@ -201,6 +206,7 @@ export default function CalendarPage() {
           {(loading ? [] : dates).map((date, index) => {
             const dateKey = activeMonth ? getDayKey(activeMonth.month, date.date) : `${date.date}-${index}`;
             const isSelected = dateKey === selectedDayKey;
+            const isToday = dateKey === todayDayKey;
             const tone = getCalendarTone(date.event || '', date.day);
 
             return (
@@ -210,6 +216,17 @@ export default function CalendarPage() {
                 onClick={() => handleSelectDay(date.date)}
                 className="group relative flex flex-col items-center"
               >
+                {isToday && !isSelected ? (
+                  <div className="pointer-events-none absolute top-0 flex h-11 w-11 items-center justify-center">
+                    <div
+                      className="h-11 w-11 rounded-full border border-dashed"
+                      style={{
+                        borderColor: 'color-mix(in srgb, var(--primary) 58%, var(--text-subtle) 42%)',
+                        opacity: 0.9,
+                      }}
+                    />
+                  </div>
+                ) : null}
                 <div
                   className={cn(
                     'flex h-11 w-11 items-center justify-center rounded-xl font-headline text-xl font-bold transition-all',

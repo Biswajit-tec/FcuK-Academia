@@ -258,6 +258,54 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
                 assignments decoded. brain fog cleared. aesthetics peaked.
               </p>
             </InfoCard>
+
+            <InfoCard
+              theme={theme}
+              float
+              tilt={-5}
+              className="absolute bottom-14 left-2 w-[10.6rem] rounded-[1.7rem] px-4 py-4"
+              style={{ background: 'rgba(22, 24, 24, 0.92)' }}
+            >
+              <div className="flex items-center gap-2 text-[0.64rem] font-black uppercase tracking-[0.16em]" style={{ color: theme.textSubtle }}>
+                <BadgeCheck size={13} strokeWidth={2.2} style={{ color: theme.cyan }} />
+                portal damage
+              </div>
+              <div className="mt-3 font-headline text-[2rem] font-black leading-none tracking-[-0.08em]" style={{ color: '#ffffff' }}>
+                -87%
+              </div>
+              <div className="mt-2 text-[0.75rem] font-semibold leading-[1.2]" style={{ color: theme.textMuted }}>
+                fewer rage taps. way cleaner runs.
+              </div>
+            </InfoCard>
+
+            <InfoCard
+              theme={theme}
+              glow
+              float
+              tilt={5}
+              className="absolute bottom-3 right-4 w-[9.3rem] rounded-[1.5rem] px-4 py-4"
+              style={{ background: 'rgba(18, 19, 19, 0.9)' }}
+            >
+              <div className="flex items-center gap-2 text-[0.62rem] font-black uppercase tracking-[0.16em]" style={{ color: theme.accent }}>
+                <Zap size={12} strokeWidth={2.4} />
+                live mood
+              </div>
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <div>
+                  <div className="font-headline text-[1.5rem] font-black leading-none tracking-[-0.07em]" style={{ color: '#ffffff' }}>
+                    locked
+                  </div>
+                  <div className="mt-1 text-[0.7rem] font-semibold" style={{ color: theme.textMuted }}>
+                    zero chaos
+                  </div>
+                </div>
+                <div className="flex items-end gap-1.5">
+                  <div className="h-4 w-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.16)' }} />
+                  <div className="h-7 w-1.5 rounded-full" style={{ background: theme.cyan }} />
+                  <div className="h-10 w-1.5 rounded-full" style={{ background: theme.accent }} />
+                </div>
+              </div>
+            </InfoCard>
           </div>
 
           <div className="pt-4">

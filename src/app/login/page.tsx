@@ -6,6 +6,14 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 
+const SRM_DOMAIN = '@srmist.edu.in';
+
+function normalizeNetId(value: string) {
+  const normalizedValue = value.trim().toLowerCase();
+  if (!normalizedValue) return '';
+  return normalizedValue.includes('@') ? normalizedValue : `${normalizedValue}${SRM_DOMAIN}`;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -14,7 +22,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const emailIsValid = !email || email.trim().toLowerCase().endsWith('@srmist.edu.in');
+  const rawNetId = email.trim();
+  const normalizedEmail = normalizeNetId(email);
+  const showDomainSuffix = !rawNetId.includes('@');
+  const emailIsValid = !rawNetId || normalizedEmail.endsWith(SRM_DOMAIN);
 
   useEffect(() => {
     router.prefetch('/');
@@ -23,9 +34,8 @@ export default function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail.endsWith('@srmist.edu.in')) {
-      setError('Only @srmist.edu.in emails are allowed');
+    if (!normalizedEmail.endsWith(SRM_DOMAIN)) {
+      setError('Only SRM net IDs are allowed');
       return;
     }
 
@@ -136,21 +146,24 @@ export default function LoginPage() {
                     boxShadow: '0 0 10px color-mix(in srgb, var(--color-primary) 78%, transparent)',
                   }}
                 />
-                SRM EMAIL
+                NET ID
               </label>
 
-              <div className="mt-[22px] border-b pb-[15px]" style={{ borderColor: 'color-mix(in srgb, var(--color-text) 18%, transparent)' }}>
+              <div
+                className="mt-[22px] flex items-center gap-2 border-b pb-[15px]"
+                style={{ borderColor: 'color-mix(in srgb, var(--color-text) 18%, transparent)' }}
+              >
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   autoComplete="username"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="user@srmist.edu.in"
+                  placeholder="bs3341"
                   aria-invalid={!emailIsValid}
-                  className="login-placeholder login-placeholder-email h-[34px] w-full bg-transparent text-[18px] font-semibold tracking-[-0.03em] outline-none"
+                  className="login-placeholder login-placeholder-email login-themed-input h-[34px] min-w-0 flex-1 bg-transparent text-[18px] font-semibold tracking-[-0.03em] outline-none"
                   style={{
-                    color: 'color-mix(in srgb, var(--color-text) 20%, #494c48 80%)',
+                    color: 'var(--color-text)',
                     caretColor: 'var(--color-primary)',
                   }}
                   onFocus={(event) => {
@@ -171,10 +184,18 @@ export default function LoginPage() {
                     event.currentTarget.parentElement?.style.removeProperty('box-shadow');
                   }}
                 />
+                {showDomainSuffix ? (
+                  <span
+                    className="login-themed-input pointer-events-none select-none text-[18px] font-semibold tracking-[-0.03em]"
+                    style={{ color: 'color-mix(in srgb, var(--color-text) 28%, #73766f 72%)' }}
+                  >
+                    {SRM_DOMAIN}
+                  </span>
+                ) : null}
               </div>
               {!emailIsValid ? (
                 <p className="mt-[10px] text-[11px] uppercase tracking-[0.18em]" style={{ color: '#ff7a68' }}>
-                  only @srmist.edu.in emails are allowed
+                  only SRM net IDs are allowed
                 </p>
               ) : null}
             </div>
@@ -206,9 +227,9 @@ export default function LoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
-                  className="login-placeholder login-placeholder-password h-[34px] min-w-0 flex-1 bg-transparent text-[18px] font-semibold tracking-[0.02em] outline-none"
+                  className="login-placeholder login-placeholder-password login-themed-input h-[34px] min-w-0 flex-1 bg-transparent text-[18px] font-semibold tracking-[0.02em] outline-none"
                   style={{
-                    color: 'color-mix(in srgb, var(--color-text) 20%, #5a5d59 80%)',
+                    color: 'var(--color-text)',
                     caretColor: 'var(--color-primary)',
                   }}
                   onFocus={(event) => {
@@ -310,6 +331,12 @@ export default function LoginPage() {
 
         .login-placeholder-password::placeholder {
           color: color-mix(in srgb, var(--color-text) 22%, #515550 78%);
+        }
+
+        :global(html[data-theme='mint-gray'] .login-themed-input) {
+          font-family: var(--font-theme);
+          font-weight: 400;
+          letter-spacing: 0;
         }
       `}</style>
     </main>

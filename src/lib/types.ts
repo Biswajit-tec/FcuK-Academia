@@ -123,6 +123,7 @@ export interface ThemeDefinition {
   label: string;
   shortLabel: string;
   description: string;
+  fontFamily: string;
   mode: 'dark' | 'light';
   category: 'dark' | 'light' | 'soft';
   preview: string[];

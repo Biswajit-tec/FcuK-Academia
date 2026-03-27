@@ -8,6 +8,7 @@ import AttendancePredictModal from '@/components/attendance/AttendancePredictMod
 import CountUp from '@/components/ui/CountUp';
 import SubjectCard from '@/components/dashboard/SubjectCard';
 import GlowCard from '@/components/ui/GlowCard';
+import ThemedNumberText from '@/components/ui/ThemedNumberText';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useAppState } from '@/context/AppStateContext';
 import { useDashboardDataContext } from '@/context/DashboardDataContext';
@@ -97,8 +98,10 @@ export default function AttendancePage() {
         </div>
         <RevealHeading className="relative z-10">
           <p className="theme-kicker mb-2">overall attendance</p>
-          <span className="font-headline text-[6.6rem] font-bold leading-[0.86] tracking-tight text-primary">
-            {loading ? '0.0%' : <CountUp value={overallAtt} decimals={1} suffix="%" />}
+          <span className="text-[6.6rem] font-bold leading-[0.86] tracking-tight text-primary">
+            {loading
+              ? <ThemedNumberText value="0.0%" />
+              : <CountUp value={overallAtt} decimals={1} suffix="%" renderFormatted={(formatted) => <ThemedNumberText value={formatted} />} />}
           </span>
         </RevealHeading>
       </section>

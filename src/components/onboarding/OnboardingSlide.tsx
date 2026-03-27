@@ -1,6 +1,7 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
+import type { Variants } from 'framer-motion';
 import { motion } from 'framer-motion';
 
 import type { OnboardingThemeConfig } from '@/components/onboarding/types';
@@ -16,6 +17,8 @@ interface OnboardingSlideProps {
   style?: CSSProperties;
 }
 
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
 const containerVariants = {
   hidden: {},
   visible: {
@@ -24,7 +27,7 @@ const containerVariants = {
       delayChildren: 0.04,
     },
   },
-};
+} satisfies Variants;
 
 const itemVariants = {
   hidden: { opacity: 0, y: 26 },
@@ -33,10 +36,10 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.42,
-      ease: [0.22, 1, 0.36, 1],
+      ease: EASE_OUT,
     },
   },
-};
+} satisfies Variants;
 
 export function SlideItem({
   children,

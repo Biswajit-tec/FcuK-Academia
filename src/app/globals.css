@@ -25,6 +25,7 @@
 }
 
 :root {
+  --font-theme: "ThemeNumberNeonLime", sans-serif;
   --background: #050505;
   --background-alt: #0c1110;
   --surface: #0f1110;
@@ -69,6 +70,216 @@
   --nav-background: color-mix(in srgb, var(--surface) 82%, transparent);
   --card-border: var(--border);
   --page-text-shadow: var(--glow-primary);
+}
+
+@font-face {
+  font-family: "Brezo";
+  src: url("/fonts/BrezoRegular-PVEgP.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Broken System";
+  src: url("/fonts/BrokenSystemDemoVersion-5yG7v.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chokotheo";
+  src: url("/fonts/ChokotheotrialRegular-DYmZ3.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chonk";
+  src: url("/fonts/Chonk-8O1pM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Evaco";
+  src: url("/fonts/Evaco-aYvzJ.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Everdeath";
+  src: url("/fonts/EverdeathRegular-nAWlO.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Goodhers Hooney";
+  src: url("/fonts/Goodhershooney-OGaXo.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Krandish";
+  src: url("/fonts/Krandish-3lAvM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kruela";
+  src: url("/fonts/KruelaRegular-2vA8o.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lazy Toms";
+  src: url("/fonts/LazyToms-E4dMg.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Marley Antique";
+  src: url("/fonts/MarleyAntique-G3LpA.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Qelandsaightrial";
+  src: url("/fonts/QelandsaightrialRegular-KV9mW.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Realizm Demo";
+  src: url("/fonts/RealizmDemoRegular-ARv2m.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Reject Spaces";
+  src: url("/fonts/RejectSpacesDemoRegular-1jAAM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rockold";
+  src: url("/fonts/RockoldRegular-nAWlV.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Srame";
+  src: url("/fonts/Srame-WpnE9.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Threats Emerge";
+  src: url("/fonts/ThreatsEmergeDemoRegular-YqRRL.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vatuenhelathrotrial";
+  src: url("/fonts/VatuenhelathrotrialRegular-vnlzZ.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vittasoa";
+  src: url("/fonts/VittasoaRegular-MAe6P.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Zeroarea";
+  src: url("/fonts/ZeroareaRegular-8O1Pn.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberNeonLime";
+  src: url("/fonts/Chonk-8O1pM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberCyanNavy";
+  src: url("/fonts/BrezoRegular-PVEgP.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberElectricBlue";
+  src: url("/fonts/Evaco-aYvzJ.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberAmberCharcoal";
+  src: url("/fonts/MarleyAntique-G3LpA.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberGraphiteGreen";
+  src: url("/fonts/Krandish-3lAvM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberOrangeNoir";
+  src: url("/fonts/KruelaRegular-2vA8o.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberNeoBrutalPop";
+  src: url("/fonts/Goodhershooney-OGaXo.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberRoyalAmethyst";
+  src: url("/fonts/RealizmDemoRegular-ARv2m.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberMinimalLight";
+  src: url("/fonts/Goodhershooney-OGaXo.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberClaymorph";
+  src: url("/fonts/Goodhershooney-OGaXo.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberSoftBloom";
+  src: url("/fonts/BrezoRegular-PVEgP.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberLavenderViolet";
+  src: url("/fonts/Krandish-3lAvM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberPurplePeach";
+  src: url("/fonts/MarleyAntique-G3LpA.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberMintGray";
+  src: url("/fonts/Krandish-3lAvM.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ThemeNumberSoftPinkBeige";
+  src: url("/fonts/KruelaRegular-2vA8o.otf") format("opentype");
+  font-display: swap;
 }
 
 @layer base {
@@ -239,6 +450,41 @@
     @apply font-label text-[10px] font-semibold uppercase;
     color: var(--text-subtle);
     letter-spacing: 0.24em;
+  }
+
+  .theme-number-font {
+    font-family: var(--font-theme);
+    font-weight: 400 !important;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: 0 !important;
+    line-height: 1;
+  }
+
+  html[data-theme='claymorph'] .theme-number-font {
+    transform: translateY(0.03em) rotate(-2deg);
+  }
+
+  html[data-theme='soft-bloom'] .theme-number-font {
+    transform: translateY(-0.01em);
+    letter-spacing: 0.02em !important;
+  }
+
+  html[data-theme='lavender-violet'] .theme-number-font {
+    transform: translateY(0.01em) rotate(-1deg);
+  }
+
+  html[data-theme='purple-peach'] .theme-number-font {
+    transform: translateY(0.02em);
+    letter-spacing: -0.01em !important;
+  }
+
+  html[data-theme='mint-gray'] .theme-number-font {
+    transform: scale(0.97);
+  }
+
+  html[data-theme='soft-pink-beige'] .theme-number-font {
+    transform: translateY(0.02em) rotate(1deg);
   }
 
   .theme-input {

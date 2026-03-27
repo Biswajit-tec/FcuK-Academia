@@ -1,0 +1,37 @@
+{
+  "id": "/",
+  "name": "FcuK Academia",
+  "short_name": "Academia",
+  "description": "the future of rebellious learning",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait",
+  "background_color": "#080402",
+  "theme_color": "#080402",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/android-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/android-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -17,6 +17,8 @@ import ProgressBar from '../ui/ProgressBar';
 import { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
 interface SubjectCardProps {
   subject: Subject;
   type: 'attendance' | 'marks';
@@ -128,7 +130,7 @@ function SubjectCard({ subject, type }: SubjectCardProps) {
     >
       <motion.div
         whileTap={{ scale: 0.985 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.4, ease: EASE_OUT }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         className="relative min-h-[22.5rem] cursor-pointer [transform-style:preserve-3d]"
         style={{ transformStyle: 'preserve-3d' }}

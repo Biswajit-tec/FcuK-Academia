@@ -9,6 +9,7 @@ interface CountUpProps {
   prefix?: string;
   suffix?: string;
   className?: string;
+  renderFormatted?: (formatted: string) => React.ReactNode;
 }
 
 function formatValue(value: number, decimals: number) {
@@ -25,6 +26,7 @@ export default function CountUp({
   prefix = '',
   suffix = '',
   className,
+  renderFormatted,
 }: CountUpProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const frameRef = useRef<number | null>(null);
@@ -57,11 +59,11 @@ export default function CountUp({
     };
   }, [duration, value]);
 
+  const formatted = `${prefix}${formatValue(displayValue, decimals)}${suffix}`;
+
   return (
     <span className={className}>
-      {prefix}
-      {formatValue(displayValue, decimals)}
-      {suffix}
+      {renderFormatted ? renderFormatted(formatted) : formatted}
     </span>
   );
 }

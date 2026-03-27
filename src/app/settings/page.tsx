@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const motionProps = getInteractiveMotion(themeConfig.motion);
   const [logoutLoading, setLogoutLoading] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationToastOpen, setNotificationToastOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const compactCourse = getCompactCourseLabel(user);
 
@@ -60,6 +60,23 @@ export default function SettingsPage() {
     await refreshDashboard();
     router.refresh();
   }
+
+  function handleNotificationPress() {
+    setNotificationToastOpen(false);
+    window.requestAnimationFrame(() => {
+      setNotificationToastOpen(true);
+    });
+  }
+
+  useEffect(() => {
+    if (!notificationToastOpen) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setNotificationToastOpen(false);
+    }, 3400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [notificationToastOpen]);
 
   return (
     <div className="space-y-7 pb-36 pt-4">
@@ -146,9 +163,10 @@ export default function SettingsPage() {
             <ToggleRow
               icon={Bell}
               title="notifications"
-              subtitle={user?.mobile || 'Stay updated on class alerts'}
-              checked={notificationsEnabled}
-              onChange={() => setNotificationsEnabled((current) => !current)}
+              subtitle="still cooking. tap here for the vibe check instead of enabling anything."
+              checked={false}
+              statusLabel="soon"
+              onChange={handleNotificationPress}
               motionProps={motionProps}
             />
             <PreferenceLink
@@ -185,6 +203,7 @@ export default function SettingsPage() {
       </section>
 
       <PrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
+      <NotificationToast open={notificationToastOpen} />
     </div>
   );
 }
@@ -396,6 +415,7 @@ function ToggleRow({
   title,
   subtitle,
   checked,
+  statusLabel,
   onChange,
   motionProps,
 }: {
@@ -403,6 +423,7 @@ function ToggleRow({
   title: string;
   subtitle: string;
   checked: boolean;
+  statusLabel?: string;
   onChange: () => void;
   motionProps: ReturnType<typeof getInteractiveMotion>;
 }) {
@@ -432,25 +453,71 @@ function ToggleRow({
         </div>
       </div>
 
-      <div
-        className="flex h-7 w-12 shrink-0 self-center items-center rounded-[var(--radius-pill)] px-1"
-        style={{
-          background: checked
-            ? 'color-mix(in srgb, var(--secondary) 24%, transparent)'
-            : 'color-mix(in srgb, var(--surface-highlight) 86%, transparent)',
-        }}
-      >
-        <motion.div
-          animate={{ x: checked ? 20 : 0 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="h-5 w-5 rounded-full"
+      <div className="flex shrink-0 items-center gap-3 self-center">
+        {statusLabel ? (
+          <span
+            className="rounded-[var(--radius-pill)] px-2.5 py-1 font-label text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{
+              background: 'color-mix(in srgb, var(--accent) 16%, transparent)',
+              color: 'var(--accent)',
+            }}
+          >
+            {statusLabel}
+          </span>
+        ) : null}
+        <div
+          className="flex h-7 w-12 items-center rounded-[var(--radius-pill)] px-1"
           style={{
-            background: checked ? 'var(--secondary)' : 'var(--text-subtle)',
-            boxShadow: checked ? 'var(--glow-secondary)' : 'none',
+            background: checked
+              ? 'color-mix(in srgb, var(--secondary) 24%, transparent)'
+              : 'color-mix(in srgb, var(--surface-highlight) 86%, transparent)',
           }}
-        />
+        >
+          <motion.div
+            animate={{ x: checked ? 20 : 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="h-5 w-5 rounded-full"
+            style={{
+              background: checked ? 'var(--secondary)' : 'var(--text-subtle)',
+              boxShadow: checked ? 'var(--glow-secondary)' : 'none',
+            }}
+          />
+        </div>
       </div>
     </motion.button>
+  );
+}
+
+function NotificationToast({ open }: { open: boolean }) {
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.98 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="pointer-events-none fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-[940] mx-auto w-full max-w-sm"
+        >
+          <div
+            className="theme-card border px-4 py-4"
+            style={{
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, transparent) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--accent) 10%) 100%)',
+              borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--card-border))',
+              boxShadow: 'var(--elevation-floating)',
+            }}
+          >
+            <p className="theme-kicker" style={{ color: 'var(--accent)' }}>feature lab</p>
+            <h3 className="mt-1 font-headline text-xl font-bold text-on-surface">
+              notifications are cooking...
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+              Stay tuned, something awesome is coming soon. No toggle, no backend, no permission popup today.
+            </p>
+          </div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

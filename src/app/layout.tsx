@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -8,6 +8,7 @@ import { AppStateProvider } from "@/context/AppStateContext";
 import { DashboardDataProvider } from "@/context/DashboardDataContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppLayout from "@/components/layout/AppLayout";
+import ServiceWorkerRegistration from "@/components/system/ServiceWorkerRegistration";
 import {
   defaultTheme,
   getThemeBootstrapScript,
@@ -34,18 +35,18 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "FcuK Academia",
   description: "the future of rebellious learning",
-  themeColor: "#f5a24f",
+  manifest: "/manifest.json",
   icons: {
     icon: [
+      { url: "/icons/android-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/android-icon-512.png", sizes: "512x512", type: "image/png" },
       { url: "/icons/browser%20logo.jpeg", type: "image/jpeg" },
-      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
       { url: "/icons/ios%20new%20logo.jpeg", type: "image/jpeg" },
     ],
     shortcut: [
-      { url: "/icons/browser%20logo.jpeg", type: "image/jpeg" },
+      { url: "/icons/android-icon-192.png", sizes: "192x192", type: "image/png" },
     ],
   },
   appleWebApp: {
@@ -53,6 +54,10 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "FcuK Academia",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#080402",
 };
 
 export default async function RootLayout({
@@ -89,6 +94,7 @@ export default async function RootLayout({
             __html: getThemeBootstrapScript(initialTheme),
           }}
         />
+        <ServiceWorkerRegistration />
         <ThemeProvider initialTheme={initialTheme}>
           <DashboardDataProvider>
             <AppStateProvider>

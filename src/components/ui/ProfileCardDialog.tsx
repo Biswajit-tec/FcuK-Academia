@@ -10,6 +10,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { getCompactCourseLabel } from '@/lib/academia-ui';
 import type { DashboardData } from '@/lib/api/types';
 
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
 interface ProfileCardDialogProps {
   open: boolean;
   onClose: () => void;
@@ -98,7 +100,7 @@ export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDi
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.22, ease: EASE_OUT }}
           className="fixed inset-0 z-[140] flex items-center justify-center px-5"
           style={{
             background: 'var(--overlay-backdrop)',
@@ -114,7 +116,7 @@ export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDi
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
             transition={{
               duration: Math.max(0.26, themeConfig.motion.reveal.duration),
-              ease: [0.22, 1, 0.36, 1],
+              ease: EASE_OUT,
             }}
             role="dialog"
             aria-modal="true"

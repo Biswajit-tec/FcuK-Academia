@@ -8,6 +8,7 @@ import TargetGradeSheet, { TargetGradeTrigger } from '@/components/marks/TargetG
 import CountUp from '@/components/ui/CountUp';
 import GlowCard from '@/components/ui/GlowCard';
 import SubjectCard from '@/components/dashboard/SubjectCard';
+import ThemedNumberText from '@/components/ui/ThemedNumberText';
 import { PageReveal, RevealHeading, RevealItem, RevealText } from '@/components/ui/PageReveal';
 import { useMarks } from '@/hooks/useMarks';
 import { getMarksPercentage, getWeakestMark } from '@/lib/academia-ui';
@@ -32,10 +33,14 @@ export default function MarksPage() {
       <section className="mt-2 space-y-2">
         <p className="theme-kicker">total aggregate</p>
         <RevealHeading className="flex items-baseline gap-2">
-          <span className="font-headline text-[5.2rem] font-bold leading-[0.82] tracking-tight text-primary">
-            {loading ? '0.0' : <CountUp value={totalObtained} decimals={1} />}
+          <span className="text-[5.2rem] font-bold leading-[0.82] tracking-tight text-primary">
+            {loading
+              ? <ThemedNumberText value="0.0" />
+              : <CountUp value={totalObtained} decimals={1} renderFormatted={(formatted) => <ThemedNumberText value={formatted} />} />}
           </span>
-          <span className="font-headline text-4xl font-bold text-on-surface-variant">/ {totalMax || 0}</span>
+          <span className="font-headline text-4xl font-bold text-on-surface-variant">
+            / <ThemedNumberText value={`${totalMax || 0}`} />
+          </span>
         </RevealHeading>
         <div
           className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5"
