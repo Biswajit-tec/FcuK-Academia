@@ -11,6 +11,7 @@ import SettingsPage from '@/app/settings/page';
 import TimetablePage from '@/app/timetable/page';
 import Navbar from '@/components/layout/Navbar';
 import SwipeContainer from '@/components/layout/SwipeContainer';
+import OnboardingOverlay from '@/components/onboarding/OnboardingOverlay';
 import { navigateToTab, syncRouteTabPath, useActiveTabPath } from '@/components/layout/tab-navigation';
 import IntroOverlay from '@/components/ui/IntroOverlay';
 
@@ -80,6 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative mx-auto min-h-screen w-full max-w-[28rem] overflow-x-hidden sm:max-w-[34rem] lg:max-w-[44rem] xl:max-w-[52rem]">
       <IntroOverlay />
+      <OnboardingOverlay />
 
       <div className="app-shell transition-opacity duration-300">
         {isSwipeableRoute ? (

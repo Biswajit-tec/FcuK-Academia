@@ -1084,6 +1084,8 @@ export function getThemeBootstrapScript(initialTheme: ThemeType = defaultTheme) 
         const storageKey = ${JSON.stringify(THEME_STORAGE_KEY)};
         const cookieKey = ${JSON.stringify(THEME_COOKIE_KEY)};
         const introKey = ${JSON.stringify(INTRO_STORAGE_KEY)};
+        const onboardingPendingKey = 'onboardingPending';
+        const onboardingDoneKey = 'onboardingDone';
         const fallbackTheme = ${JSON.stringify(initialTheme)};
         const root = document.documentElement;
         const domTheme = root.dataset.theme;
@@ -1102,8 +1104,11 @@ export function getThemeBootstrapScript(initialTheme: ThemeType = defaultTheme) 
         root.dataset.theme = theme;
         root.dataset.themeMode = modes[theme] || 'dark';
         const introSeen = sessionStorage.getItem(introKey) === 'true';
+        const onboardingPending = sessionStorage.getItem(onboardingPendingKey) === 'true';
+        const onboardingDone = localStorage.getItem(onboardingDoneKey) === 'true';
+        const shouldHideAppForOnboarding = onboardingPending && !onboardingDone;
         root.dataset.introSeen = introSeen ? 'true' : 'false';
-        root.dataset.appVisible = introSeen ? 'true' : 'false';
+        root.dataset.appVisible = introSeen && !shouldHideAppForOnboarding ? 'true' : 'false';
         root.style.colorScheme = root.dataset.themeMode;
         root.classList.toggle('dark', root.dataset.themeMode === 'dark');
         localStorage.setItem(storageKey, theme);

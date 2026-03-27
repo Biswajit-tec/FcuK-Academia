@@ -46,6 +46,10 @@ export default function LoginPage() {
         return;
       }
 
+      if (localStorage.getItem('onboardingDone') !== 'true') {
+        sessionStorage.setItem('onboardingPending', 'true');
+      }
+
       window.location.replace('/');
     } catch {
       setError('server error');

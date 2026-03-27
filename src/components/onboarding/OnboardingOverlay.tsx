@@ -1,0 +1,96 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
+import OnboardingContainer from '@/components/onboarding/OnboardingContainer';
+import type { OnboardingThemeConfig } from '@/components/onboarding/types';
+import { useTheme } from '@/context/ThemeContext';
+
+const ONBOARDING_STORAGE_KEY = 'onboardingDone';
+const ONBOARDING_PENDING_KEY = 'onboardingPending';
+
+function toRgba(hex: string, alpha: number) {
+  const normalized = hex.replace('#', '');
+  const full = normalized.length === 3
+    ? normalized.split('').map((char) => `${char}${char}`).join('')
+    : normalized;
+
+  const value = Number.parseInt(full, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+export default function OnboardingOverlay() {
+  const { startIntro, themeConfig } = useTheme();
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      sessionStorage.getItem(ONBOARDING_PENDING_KEY) === 'true' &&
+      localStorage.getItem(ONBOARDING_STORAGE_KEY) !== 'true'
+    );
+  });
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const shouldShow =
+        sessionStorage.getItem(ONBOARDING_PENDING_KEY) === 'true' &&
+        localStorage.getItem(ONBOARDING_STORAGE_KEY) !== 'true';
+
+      if (shouldShow) {
+        sessionStorage.removeItem(ONBOARDING_PENDING_KEY);
+        setVisible(true);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    if (visible) {
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [visible]);
+
+  const onboardingTheme = useMemo<OnboardingThemeConfig>(() => {
+    const background = themeConfig.colors.background;
+    const accent = themeConfig.colors.primary;
+
+    return {
+      background,
+      accent,
+      accentSoft: themeConfig.colors.primarySoft,
+      accentBorder: toRgba(accent, 0.3),
+      accentGlow: toRgba(accent, 0.2),
+      accentGlowStrong: toRgba(accent, 0.36),
+      cyan: themeConfig.colors.secondary,
+      orange: themeConfig.colors.accent,
+      text: themeConfig.colors.text,
+      textMuted: themeConfig.colors.textMuted,
+      textSubtle: themeConfig.colors.textSubtle,
+      surface: toRgba('#1b1b1b', 0.94),
+      surfaceTop: toRgba('#252525', 0.96),
+      surfaceMuted: 'rgba(255,255,255,0.09)',
+      surfaceBorder: toRgba('#ffffff', 0.08),
+      surfaceShadow: '0 24px 60px rgba(0, 0, 0, 0.36)',
+    };
+  }, [themeConfig]);
+
+  const handleFinish = () => {
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+    setVisible(false);
+    startIntro();
+  };
+
+  if (!visible) {
+    return null;
+  }
+
+  return <OnboardingContainer theme={onboardingTheme} onFinish={handleFinish} />;
+}

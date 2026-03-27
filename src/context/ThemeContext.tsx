@@ -23,6 +23,7 @@ interface ThemeContextType {
   showIntro: boolean;
   setTheme: (theme: ThemeType) => void;
   dismissIntro: () => void;
+  startIntro: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -51,6 +52,9 @@ function resolveIntroState() {
   }
 
   if (typeof window !== 'undefined') {
+    if (sessionStorage.getItem('onboardingPending') === 'true') {
+      return false;
+    }
     return sessionStorage.getItem(INTRO_STORAGE_KEY) !== 'true';
   }
 
@@ -125,6 +129,17 @@ export function ThemeProvider({
     }
   }
 
+  function startIntro() {
+    setShowIntro(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(INTRO_STORAGE_KEY);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.introSeen = 'false';
+      document.documentElement.dataset.appVisible = 'false';
+    }
+  }
+
   return (
     <ThemeContext.Provider
       value={{
@@ -135,6 +150,7 @@ export function ThemeProvider({
         showIntro,
         setTheme,
         dismissIntro,
+        startIntro,
       }}
     >
       {children}
