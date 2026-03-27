@@ -7,7 +7,7 @@ import React, { useEffect } from 'react';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { getInteractiveMotion } from '@/lib/motion';
 import { useTheme } from '@/context/ThemeContext';
-import { getCompactCourseLabel } from '@/lib/academia-ui';
+import { formatRegistrationNumber, getCompactCourseLabel } from '@/lib/academia-ui';
 import type { DashboardData } from '@/lib/api/types';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
@@ -111,7 +111,7 @@ export default function ProfileCardDialog({ open, onClose, user }: ProfileCardDi
                   <div>
                     <p className="theme-kicker">registration number</p>
                     <p className="mt-1 font-headline text-[1.35rem] font-black leading-none text-on-surface">
-                      {user?.regNumber || 'Not available'}
+                      {user?.regNumber ? formatRegistrationNumber(user.regNumber) : 'Not available'}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">

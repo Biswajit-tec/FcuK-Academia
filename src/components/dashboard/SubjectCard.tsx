@@ -132,11 +132,11 @@ function SubjectCard({ subject, type }: SubjectCardProps) {
         whileTap={{ scale: 0.985 }}
         transition={{ duration: 0.4, ease: EASE_OUT }}
         animate={{ rotateY: flipped ? 180 : 0 }}
-        className="relative min-h-[22.5rem] cursor-pointer [transform-style:preserve-3d]"
+        className="relative min-h-[22.5rem] cursor-pointer [transform-style:preserve-3d] max-[380px]:min-h-[21.75rem]"
         style={{ transformStyle: 'preserve-3d' }}
       >
         <div className="absolute inset-0 [backface-visibility:hidden]" style={{ backfaceVisibility: 'hidden' }}>
-          <div className="theme-card relative h-full min-h-[22.5rem] px-5 pb-8 pt-5 md:px-6 md:pb-9 md:pt-6">
+          <div className="theme-card relative h-full min-h-[22.5rem] px-5 pb-8 pt-5 md:px-6 md:pb-9 md:pt-6 max-[380px]:min-h-[21.75rem]">
             <GlowEdge glowColor={glowColor} />
             <MarksCardFront subject={subject} examBoxes={examBoxes} hexColor={hexColor} marksPct={marksPct} />
           </div>
@@ -146,7 +146,7 @@ function SubjectCard({ subject, type }: SubjectCardProps) {
           className="absolute inset-0 [backface-visibility:hidden]"
           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
-          <div className="theme-card relative flex h-full min-h-[22.5rem] flex-col px-4 pb-6 pt-4 md:px-5 md:pb-7 md:pt-5">
+          <div className="theme-card relative flex h-full min-h-[22.5rem] flex-col px-4 pb-6 pt-4 md:px-5 md:pb-7 md:pt-5 max-[380px]:min-h-[21.75rem] max-[380px]:px-3.5 max-[380px]:pb-5 max-[380px]:pt-3.5">
             <GlowEdge glowColor={glowColor} />
             <MarksCardBack subject={subject} chartData={chartData} lineColor={hexColor} />
           </div>
@@ -304,12 +304,12 @@ function MarksCardBack({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="theme-kicker">marks trend</p>
-          <h3 className="mt-2 font-headline text-[1.55rem] font-bold lowercase leading-[0.92] text-on-surface">
+          <h3 className="mt-1.5 font-headline text-[1.55rem] font-bold lowercase leading-[0.92] text-on-surface max-[380px]:text-[1.35rem]">
             {subject.name}
           </h3>
         </div>
         <div
-          className="rounded-full px-2.5 py-1 font-label text-[8px] font-bold uppercase tracking-[0.16em] text-on-surface"
+          className="rounded-full px-2.5 py-1 font-label text-[8px] font-bold uppercase tracking-[0.16em] text-on-surface max-[380px]:px-2 max-[380px]:text-[7px]"
           style={{
             background: 'color-mix(in srgb, var(--surface-elevated) 88%, transparent)',
             border: '1px solid var(--border)',
@@ -320,62 +320,62 @@ function MarksCardBack({
       </div>
 
       <div
-        className="mt-4 flex min-h-0 flex-1 flex-col rounded-[18px] border p-3"
+        className="mt-3.5 flex min-h-0 flex-1 flex-col rounded-[18px] border p-3 max-[380px]:mt-3 max-[380px]:rounded-[16px] max-[380px]:p-2.5"
         style={{
           background: 'color-mix(in srgb, var(--surface-soft) 90%, transparent)',
           borderColor: 'color-mix(in srgb, var(--border) 88%, transparent)',
         }}
       >
         {chartData.length ? (
-          <div className="h-32 w-full shrink-0">
+          <div className="h-32 w-full shrink-0 max-[380px]:h-28">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 12, right: 6, left: 4, bottom: 0 }}>
+              <ComposedChart data={chartData} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(165,175,157,0.12)" vertical={false} />
                 <XAxis
                   dataKey="exam"
-                  tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }}
+                  tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 700 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }}
+                  tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 700 }}
                   axisLine={false}
                   tickLine={false}
-                  width={30}
+                  width={24}
                   domain={[0, 'dataMax']}
                 />
                 <Tooltip content={<MarksTooltip lineColor={lineColor} />} cursor={{ stroke: 'rgba(165,175,157,0.18)' }} />
-                <Bar dataKey="obtained" fill="color-mix(in srgb, var(--surface-highlight) 92%, transparent)" radius={[8, 8, 8, 8]} maxBarSize={34} />
+                <Bar dataKey="obtained" fill="color-mix(in srgb, var(--surface-highlight) 92%, transparent)" radius={[8, 8, 8, 8]} maxBarSize={28} />
                 <Line
                   type="monotone"
                   dataKey="obtained"
                   stroke={lineColor}
-                  strokeWidth={3}
-                  dot={{ r: 4, strokeWidth: 2, fill: lineColor, stroke: 'var(--surface)' }}
-                  activeDot={{ r: 6, fill: lineColor, stroke: 'var(--surface)', strokeWidth: 2 }}
+                  strokeWidth={2.5}
+                  dot={{ r: 3.5, strokeWidth: 2, fill: lineColor, stroke: 'var(--surface)' }}
+                  activeDot={{ r: 5, fill: lineColor, stroke: 'var(--surface)', strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="flex h-32 items-center justify-center rounded-[16px] border border-dashed border-[var(--border)] text-center text-sm font-semibold text-on-surface-variant">
+          <div className="flex h-32 items-center justify-center rounded-[16px] border border-dashed border-[var(--border)] text-center text-sm font-semibold text-on-surface-variant max-[380px]:h-28 max-[380px]:text-[13px]">
             no chart data yet
           </div>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-2.5 grid grid-cols-2 gap-2 max-[380px]:mt-2 max-[380px]:gap-1.5">
           {chartData.map((point) => (
             <div
               key={point.exam}
-              className="rounded-[12px] border px-2.5 py-2"
+              className="rounded-[12px] border px-2.5 py-2 max-[380px]:rounded-[10px] max-[380px]:px-2 max-[380px]:py-1.5"
               style={{
                 background: 'color-mix(in srgb, var(--surface-elevated) 84%, transparent)',
                 borderColor: 'color-mix(in srgb, var(--border) 90%, transparent)',
               }}
             >
-              <p className="font-label text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">{point.exam}</p>
-              <p className="mt-1 font-headline text-[1.05rem] font-bold text-on-surface">{point.obtained.toFixed(2)}</p>
-              <p className="font-label text-[9px] font-bold tracking-[0.14em] text-on-surface-variant">of {point.max.toFixed(2)}</p>
+              <p className="truncate font-label text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant max-[380px]:text-[8px]">{point.exam}</p>
+              <p className="mt-1 font-headline text-[1.05rem] font-bold text-on-surface max-[380px]:text-[0.95rem]">{point.obtained.toFixed(2)}</p>
+              <p className="font-label text-[9px] font-bold tracking-[0.14em] text-on-surface-variant max-[380px]:text-[8px]">of {point.max.toFixed(2)}</p>
             </div>
           ))}
         </div>

@@ -14,6 +14,12 @@ export function createAvatarUrl(name: string) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'SRM Student')}&background=111111&color=b6ff00&bold=true`;
 }
 
+export function formatRegistrationNumber(regNumber?: string | null) {
+  if (!regNumber) return 'N/A';
+  const normalized = regNumber.trim();
+  return normalized.replace(/^ra/i, 'RA');
+}
+
 export function toUserProfile(userInfo: RawUserInfo): UserProfile {
   return {
     id: userInfo.regNumber || userInfo.name,

@@ -94,10 +94,10 @@ function MiniBar({
 function BottomNav({ activeIndex, totalSlides, theme, onNext }: BottomNavProps) {
   return (
     <div
-      className="absolute inset-x-5 z-30 flex items-center justify-between"
-      style={{ bottom: 'max(1.3rem, calc(env(safe-area-inset-bottom) + 0.55rem))' }}
+      className="absolute inset-x-4 z-30 flex items-center justify-between sm:inset-x-5"
+      style={{ bottom: 'max(1.1rem, calc(env(safe-area-inset-bottom) + 0.7rem))' }}
     >
-      <div className="h-[4.5rem] w-[4.5rem] shrink-0 opacity-0" aria-hidden="true" />
+      <div className="h-[4rem] w-[4rem] shrink-0 opacity-0 max-[360px]:h-[3.7rem] max-[360px]:w-[3.7rem]" aria-hidden="true" />
       <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
         <ProgressDots count={totalSlides} activeIndex={activeIndex} theme={theme} />
       </div>

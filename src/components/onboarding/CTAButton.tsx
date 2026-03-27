@@ -42,16 +42,16 @@ export default function CTAButton({
       type="button"
       onClick={onClick}
       whileTap={{ scale: 0.94 }}
-      className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border"
+      className="flex h-[4rem] w-[4rem] items-center justify-center rounded-full border max-[360px]:h-[3.7rem] max-[360px]:w-[3.7rem]"
       style={{
         background: `linear-gradient(180deg, ${theme.accentSoft} 0%, ${theme.accent} 100%)`,
         borderColor: theme.accentBorder,
         color: theme.background,
-        boxShadow: `0 18px 38px ${theme.accentGlowStrong}`,
+        boxShadow: `0 14px 30px ${theme.accentGlowStrong}`,
       }}
       aria-label={label}
     >
-      <ArrowRight size={28} strokeWidth={2.2} />
+      <ArrowRight size={24} strokeWidth={2.15} />
     </motion.button>
   );
 }

@@ -24,7 +24,7 @@ import UserAvatar from '@/components/ui/UserAvatar';
 import { useAppState } from '@/context/AppStateContext';
 import { useDashboardDataContext } from '@/context/DashboardDataContext';
 import { useTheme } from '@/context/ThemeContext';
-import { getCompactCourseLabel } from '@/lib/academia-ui';
+import { formatRegistrationNumber, getCompactCourseLabel } from '@/lib/academia-ui';
 import { getInteractiveMotion } from '@/lib/motion';
 import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ export default function SettingsPage() {
   const [notificationToastOpen, setNotificationToastOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const compactCourse = getCompactCourseLabel(user);
+  const formattedRegNumber = formatRegistrationNumber(user?.regNumber);
 
   const syncLabel = useMemo(() => {
     if (loading) return 'live sync';
@@ -100,7 +101,7 @@ export default function SettingsPage() {
               {user?.name || 'Live SRM session'}
             </h2>
             <p className="text-sm leading-5 text-on-surface-variant">
-              {user ? `${user.regNumber} / ${compactCourse}` : 'Live account details appear here.'}
+              {user ? `${formattedRegNumber} / ${compactCourse}` : 'Live account details appear here.'}
             </p>
           </div>
         </div>
@@ -197,7 +198,7 @@ export default function SettingsPage() {
           {logoutLoading ? 'logging out...' : 'abort mission / logout'}
         </Button>
         <p className="text-center text-[10px] uppercase tracking-[0.24em] text-on-surface-variant/70">
-          {user ? `${user.name.toLowerCase()} / ${user.regNumber}` : 'live SRM session'}
+          {user ? `${user.name.toLowerCase()} / ${formattedRegNumber}` : 'live SRM session'}
         </p>
         <DeveloperFooter />
       </section>
@@ -701,6 +702,9 @@ function PrivacyModal({
               >
                 <p className="text-base leading-8 text-on-surface-variant">
                   we&apos;re not here to spy on you, just to make your academic life less painful. your SRM login is only used to pull your marks, attendance, and timetable in real-time so you don&apos;t have to deal with that clunky portal again. we don&apos;t store your data, we don&apos;t sell it, and we&apos;re definitely not tracking you around the internet like some weird stalker 💀. everything stays between you and the official API, and we simply display it in a way that actually makes sense. if you turn on notifications, expect only useful stuff like “you&apos;re cooked 💀” alerts or attendance warnings, never spam. your data stays yours, always. we&apos;re just the middleman making things look cool.
+                </p>
+                <p className="mt-5 text-sm font-semibold leading-6 text-on-surface">
+                  *FCUK stands for Fully Controlled University Kit.
                 </p>
               </div>
             </div>
