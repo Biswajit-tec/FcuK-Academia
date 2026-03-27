@@ -244,6 +244,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
   const subheadingSize = compact ? 'text-[clamp(2.45rem,11.4vw,3.45rem)]' : 'text-[clamp(2.9rem,13.4vw,3.95rem)]';
   const bodyTextClass = compact ? 'text-[0.96rem]' : 'text-[1.04rem]';
   const cardRadius = extraCompact ? 'rounded-[1.7rem]' : 'rounded-[2rem]';
+  const slideBaseClass = 'swipe-screen relative h-full min-w-full flex-[0_0_100%] shrink-0';
 
   const slides = [
       <OnboardingSlide
@@ -252,7 +253,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         isActive={activeIndex === 0}
         theme={theme}
         backgroundNumber="01"
-        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
+        className={`${slideBaseClass} ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -379,7 +380,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         isActive={activeIndex === 1}
         theme={theme}
         backgroundNumber="02"
-        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
+        className={`${slideBaseClass} ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -477,7 +478,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         index={2}
         isActive={activeIndex === 2}
         theme={theme}
-        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
+        className={`${slideBaseClass} ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -574,7 +575,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         isActive={activeIndex === 3}
         theme={theme}
         backgroundNumber="04"
-        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
+        className={`${slideBaseClass} ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -645,7 +646,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         index={4}
         isActive={activeIndex === 4}
         theme={theme}
-        className={`swipe-screen relative h-full shrink-0 ${finalSlidePadding}`}
+        className={`${slideBaseClass} ${finalSlidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -753,8 +754,13 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
 
         <div
           ref={setViewportNode}
-          className="swipe-viewport relative h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none]"
-          style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+          className="swipe-viewport relative flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none]"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehaviorX: 'contain',
+            willChange: 'transform',
+            transform: 'translate3d(0, 0, 0)',
+          }}
           onTouchStart={(event) => {
             const touch = event.touches[0];
             if (!touch) return;
@@ -814,7 +820,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
             }, 70);
           }}
         >
-          <div className="flex h-full [&::-webkit-scrollbar]:hidden">
+          <div className="flex h-full min-w-full [&::-webkit-scrollbar]:hidden">
             {slides}
           </div>
         </div>
