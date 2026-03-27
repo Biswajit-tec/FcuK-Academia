@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -32,6 +32,9 @@ interface BottomNavProps {
   theme: OnboardingThemeConfig;
   onNext: () => void;
 }
+
+const DIRECTION_LOCK_RATIO = 1.1;
+const NAV_TRANSITION_DURATION_MS = 250;
 
 function progressTransition(delay = 0) {
   return {
@@ -106,7 +109,11 @@ function BottomNav({ activeIndex, totalSlides, theme, onNext }: BottomNavProps) 
 export default function OnboardingContainer({ theme, onFinish }: OnboardingContainerProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const settleTimerRef = useRef<number | null>(null);
-  const isProgrammaticScrollRef = useRef(false);
+  const navTimerRef = useRef<number | null>(null);
+  const programmaticScrollBehaviorRef = useRef<ScrollBehavior>('auto');
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+  const gestureLockRef = useRef<'x' | 'y' | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -121,6 +128,47 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
   const finalBottomPadding = extraCompact
     ? 'pb-[max(1rem,env(safe-area-inset-bottom))]'
     : 'pb-[max(1.5rem,env(safe-area-inset-bottom))]';
+
+  const toggleSwipeMode = useCallback((active: boolean) => {
+    document.body.classList.toggle('is-swiping', active);
+  }, []);
+
+  const toggleNavigationMode = useCallback((active: boolean) => {
+    document.body.classList.toggle('is-navigating', active);
+  }, []);
+
+  const clearNavigationMode = useCallback(() => {
+    if (navTimerRef.current !== null) {
+      window.clearTimeout(navTimerRef.current);
+      navTimerRef.current = null;
+    }
+
+    toggleNavigationMode(false);
+  }, [toggleNavigationMode]);
+
+  const scheduleNavigationModeReset = useCallback(() => {
+    if (navTimerRef.current !== null) {
+      window.clearTimeout(navTimerRef.current);
+    }
+
+    navTimerRef.current = window.setTimeout(() => {
+      navTimerRef.current = null;
+      toggleNavigationMode(false);
+    }, NAV_TRANSITION_DURATION_MS);
+  }, [toggleNavigationMode]);
+
+  useEffect(() => {
+    return () => {
+      if (settleTimerRef.current !== null) {
+        window.clearTimeout(settleTimerRef.current);
+      }
+      if (navTimerRef.current !== null) {
+        window.clearTimeout(navTimerRef.current);
+      }
+      toggleSwipeMode(false);
+      toggleNavigationMode(false);
+    };
+  }, [toggleNavigationMode, toggleSwipeMode]);
 
   useEffect(() => {
     const node = viewportNode;
@@ -149,15 +197,19 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
     const targetLeft = activeIndex * viewportWidth;
     if (Math.abs(node.scrollLeft - targetLeft) < 1) return;
 
-    isProgrammaticScrollRef.current = true;
-    node.scrollTo({ left: targetLeft, behavior: 'auto' });
+    node.scrollTo({
+      left: targetLeft,
+      behavior: programmaticScrollBehaviorRef.current,
+    });
+    programmaticScrollBehaviorRef.current = 'auto';
 
     if (settleTimerRef.current !== null) {
       window.clearTimeout(settleTimerRef.current);
     }
 
     settleTimerRef.current = window.setTimeout(() => {
-      isProgrammaticScrollRef.current = false;
+      toggleSwipeMode(false);
+      clearNavigationMode();
       settleTimerRef.current = null;
     }, 120);
 
@@ -167,9 +219,10 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         settleTimerRef.current = null;
       }
     };
-  }, [activeIndex, viewportWidth]);
+  }, [activeIndex, clearNavigationMode, toggleSwipeMode, viewportWidth]);
 
-  const goToSlide = (index: number) => {
+  const goToSlide = (index: number, behavior: ScrollBehavior = 'smooth') => {
+    programmaticScrollBehaviorRef.current = behavior;
     setActiveIndex(Math.max(0, Math.min(totalSlides - 1, index)));
   };
 
@@ -179,7 +232,9 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
       return;
     }
 
-    goToSlide(activeIndex + 1);
+    toggleNavigationMode(true);
+    scheduleNavigationModeReset();
+    goToSlide(activeIndex + 1, 'smooth');
   };
 
   const topPadding = compact ? 'pt-[max(1.4rem,env(safe-area-inset-top))]' : 'pt-[max(2rem,env(safe-area-inset-top))]';
@@ -197,7 +252,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         isActive={activeIndex === 0}
         theme={theme}
         backgroundNumber="01"
-        className={`relative h-full shrink-0 ${slidePadding}`}
+        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -324,7 +379,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         isActive={activeIndex === 1}
         theme={theme}
         backgroundNumber="02"
-        className={`relative h-full shrink-0 ${slidePadding}`}
+        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -422,7 +477,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         index={2}
         isActive={activeIndex === 2}
         theme={theme}
-        className={`relative h-full shrink-0 ${slidePadding}`}
+        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -519,7 +574,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         isActive={activeIndex === 3}
         theme={theme}
         backgroundNumber="04"
-        className={`relative h-full shrink-0 ${slidePadding}`}
+        className={`swipe-screen relative h-full shrink-0 ${slidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -590,7 +645,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
         index={4}
         isActive={activeIndex === 4}
         theme={theme}
-        className={`relative h-full shrink-0 ${finalSlidePadding}`}
+        className={`swipe-screen relative h-full shrink-0 ${finalSlidePadding}`}
         style={{ width: viewportWidth || undefined }}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -698,11 +753,51 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
 
         <div
           ref={setViewportNode}
-          className="relative h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none]"
+          className="swipe-viewport relative h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none]"
           style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+          onTouchStart={(event) => {
+            const touch = event.touches[0];
+            if (!touch) return;
+
+            clearNavigationMode();
+            gestureLockRef.current = null;
+            touchStartXRef.current = touch.clientX;
+            touchStartYRef.current = touch.clientY;
+          }}
+          onTouchMove={(event) => {
+            const touch = event.touches[0];
+            if (!touch) return;
+
+            const deltaX = touch.clientX - touchStartXRef.current;
+            const deltaY = touch.clientY - touchStartYRef.current;
+
+            if (!gestureLockRef.current) {
+              if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+              gestureLockRef.current = Math.abs(deltaX) > Math.abs(deltaY) * DIRECTION_LOCK_RATIO ? 'x' : 'y';
+            }
+
+            if (gestureLockRef.current === 'x') {
+              toggleSwipeMode(true);
+            }
+          }}
+          onTouchEnd={() => {
+            gestureLockRef.current = null;
+
+            if (settleTimerRef.current === null) {
+              window.setTimeout(() => {
+                toggleSwipeMode(false);
+              }, 120);
+            }
+          }}
+          onTouchCancel={() => {
+            gestureLockRef.current = null;
+            toggleSwipeMode(false);
+          }}
           onScroll={(event) => {
             if (!viewportWidth) return;
             const viewport = event.currentTarget;
+
+            toggleSwipeMode(true);
 
             if (settleTimerRef.current !== null) {
               window.clearTimeout(settleTimerRef.current);
@@ -710,7 +805,9 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
 
             settleTimerRef.current = window.setTimeout(() => {
               const nextIndex = Math.round(viewport.scrollLeft / viewportWidth);
-              isProgrammaticScrollRef.current = false;
+              toggleSwipeMode(false);
+              clearNavigationMode();
+              settleTimerRef.current = null;
               if (nextIndex !== activeIndex) {
                 setActiveIndex(Math.max(0, Math.min(totalSlides - 1, nextIndex)));
               }
