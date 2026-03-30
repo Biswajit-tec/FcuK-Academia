@@ -58,7 +58,7 @@ export default function SettingsPage() {
   async function handleSync() {
     if (refreshing) return;
 
-    await refreshDashboard();
+    await refreshDashboard('settings_sync');
     router.refresh();
   }
 

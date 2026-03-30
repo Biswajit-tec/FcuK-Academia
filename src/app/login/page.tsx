@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 
+import { trackEvent } from '@/lib/analytics';
+
 const SRM_DOMAIN = '@srmist.edu.in';
 
 function normalizeNetId(value: string) {
@@ -60,6 +62,9 @@ export default function LoginPage() {
         sessionStorage.setItem('onboardingPending', 'true');
       }
 
+      trackEvent('login_success', {
+        method: 'srm_credentials',
+      });
       window.location.replace('/');
     } catch {
       setError('server error');

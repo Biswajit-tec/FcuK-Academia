@@ -41,7 +41,7 @@ export default function AppHeader({
 
   async function handleSync() {
     if (isSyncing) return;
-    await refreshDashboard();
+    await refreshDashboard('header_sync');
   }
 
   const leading = backHref ? (

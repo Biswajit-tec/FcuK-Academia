@@ -20,6 +20,7 @@ import OnboardingSlide, { SlideItem } from '@/components/onboarding/OnboardingSl
 import ProgressDots from '@/components/onboarding/ProgressDots';
 import UserAvatar from '@/components/ui/UserAvatar';
 import type { OnboardingThemeConfig } from '@/components/onboarding/types';
+import { trackEvent } from '@/lib/analytics';
 
 interface OnboardingContainerProps {
   theme: OnboardingThemeConfig;
@@ -35,6 +36,13 @@ interface BottomNavProps {
 
 const DIRECTION_LOCK_RATIO = 1.1;
 const NAV_TRANSITION_DURATION_MS = 250;
+const ONBOARDING_SCREEN_NAMES = [
+  'onboarding_1',
+  'onboarding_2',
+  'onboarding_3',
+  'onboarding_4',
+  'onboarding_5',
+] as const;
 
 function progressTransition(delay = 0) {
   return {
@@ -114,6 +122,9 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
   const gestureLockRef = useRef<'x' | 'y' | null>(null);
+  const activeIndexRef = useRef(0);
+  const stepNavigationSourceRef = useRef<'initial' | 'button' | 'swipe'>('initial');
+  const previousTrackedIndexRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -222,6 +233,7 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
   }, [activeIndex, clearNavigationMode, toggleSwipeMode, viewportWidth]);
 
   const goToSlide = (index: number, behavior: ScrollBehavior = 'smooth') => {
+    stepNavigationSourceRef.current = 'button';
     programmaticScrollBehaviorRef.current = behavior;
     setActiveIndex(Math.max(0, Math.min(totalSlides - 1, index)));
   };
@@ -245,6 +257,33 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
   const bodyTextClass = compact ? 'text-[0.96rem]' : 'text-[1.04rem]';
   const cardRadius = extraCompact ? 'rounded-[1.7rem]' : 'rounded-[2rem]';
   const slideBaseClass = 'swipe-screen relative h-full min-w-full flex-[0_0_100%] shrink-0';
+
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const screenName = ONBOARDING_SCREEN_NAMES[activeIndex] ?? `onboarding_${activeIndex + 1}`;
+    const previousIndex = previousTrackedIndexRef.current;
+
+    trackEvent('onboarding_step_viewed', {
+      step_name: screenName,
+      step_number: activeIndex + 1,
+      total_steps: totalSlides,
+      navigation_source: stepNavigationSourceRef.current,
+    });
+
+    if (previousIndex !== null && stepNavigationSourceRef.current === 'swipe' && previousIndex !== activeIndex) {
+      trackEvent('screen_swipe', {
+        from: ONBOARDING_SCREEN_NAMES[previousIndex] ?? `onboarding_${previousIndex + 1}`,
+        to: screenName,
+        navigation_surface: 'onboarding',
+      });
+    }
+
+    previousTrackedIndexRef.current = activeIndex;
+    stepNavigationSourceRef.current = 'initial';
+  }, [activeIndex, totalSlides]);
 
   const slides = [
       <OnboardingSlide
@@ -814,7 +853,8 @@ export default function OnboardingContainer({ theme, onFinish }: OnboardingConta
               toggleSwipeMode(false);
               clearNavigationMode();
               settleTimerRef.current = null;
-              if (nextIndex !== activeIndex) {
+              if (nextIndex !== activeIndexRef.current) {
+                stepNavigationSourceRef.current = 'swipe';
                 setActiveIndex(Math.max(0, Math.min(totalSlides - 1, nextIndex)));
               }
             }, 70);

@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { usePathname } from 'next/navigation';
 
 import { ApiError, clearCachedJson, fetchJson, peekCachedJson } from '@/lib/api/client';
+import { trackEvent } from '@/lib/analytics';
 import type { DashboardData } from '@/lib/api/types';
 import type { RawAttendanceItem, RawCalendarMonth, RawMarkItem, RawTimetableItem, RawUserInfo } from '@/lib/server/academia';
 
@@ -16,7 +17,7 @@ interface DashboardDataContextValue {
   loading: boolean;
   refreshing: boolean;
   error: string | null;
-  refreshDashboard: () => Promise<void>;
+  refreshDashboard: (source?: string) => Promise<void>;
 }
 
 const DashboardDataContext = createContext<DashboardDataContextValue | undefined>(undefined);
@@ -110,7 +111,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         loading,
         refreshing,
         error,
-        refreshDashboard: () => loadDashboard({ forceRefresh: true, preserveLoading: true }),
+        refreshDashboard: async (source?: string) => {
+          trackEvent('data_refresh_triggered', {
+            source: source ?? 'manual',
+          });
+          await loadDashboard({ forceRefresh: true, preserveLoading: true });
+        },
       }}
     >
       {children}

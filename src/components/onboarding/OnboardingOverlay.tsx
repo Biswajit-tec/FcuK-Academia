@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import OnboardingContainer from '@/components/onboarding/OnboardingContainer';
 import type { OnboardingThemeConfig } from '@/components/onboarding/types';
 import { useTheme } from '@/context/ThemeContext';
+import { trackEvent } from '@/lib/analytics';
 
 const ONBOARDING_STORAGE_KEY = 'onboardingDone';
 const ONBOARDING_PENDING_KEY = 'onboardingPending';
@@ -51,6 +52,9 @@ export default function OnboardingOverlay() {
     const previousOverflow = document.body.style.overflow;
     if (visible) {
       document.body.style.overflow = 'hidden';
+      trackEvent('onboarding_started', {
+        first_time_user: true,
+      });
     }
 
     return () => {
@@ -83,6 +87,9 @@ export default function OnboardingOverlay() {
   }, [themeConfig]);
 
   const handleFinish = () => {
+    trackEvent('onboarding_completed', {
+      total_steps: 5,
+    });
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     setVisible(false);
     startIntro();

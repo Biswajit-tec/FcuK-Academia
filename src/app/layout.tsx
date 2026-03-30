@@ -8,6 +8,7 @@ import { AppStateProvider } from "@/context/AppStateContext";
 import { DashboardDataProvider } from "@/context/DashboardDataContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppLayout from "@/components/layout/AppLayout";
+import GoogleAnalytics from "@/components/system/GoogleAnalytics";
 import ServiceWorkerRegistration from "@/components/system/ServiceWorkerRegistration";
 import {
   defaultTheme,
@@ -96,6 +97,7 @@ export default async function RootLayout({
           }}
         />
         <ServiceWorkerRegistration />
+        <GoogleAnalytics />
         <ThemeProvider initialTheme={initialTheme}>
           <DashboardDataProvider>
             <AppStateProvider>

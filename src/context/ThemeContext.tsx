@@ -13,6 +13,7 @@ import {
   themeOptions,
   themes,
 } from '@/lib/theme';
+import { trackEvent } from '@/lib/analytics';
 import { ThemeDefinition, ThemeType } from '@/lib/types';
 
 interface ThemeContextType {
@@ -73,7 +74,11 @@ export function ThemeProvider({
   const themeConfig = themes[theme];
 
   const setTheme = (newTheme: ThemeType) => {
-    if (!themes[newTheme]) return;
+    if (!themes[newTheme] || newTheme === theme) return;
+
+    trackEvent('theme_changed', {
+      theme_name: newTheme,
+    });
 
     startTransition(() => {
       setThemeState(newTheme);

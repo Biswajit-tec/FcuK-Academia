@@ -3,6 +3,7 @@
 import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { registerTabNavigationController, setActiveTabPath } from '@/components/layout/tab-navigation';
+import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 interface SwipeScreen {
@@ -27,6 +28,7 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
   const gestureLockRef = useRef<'x' | 'y' | null>(null);
+  const navigationSourceRef = useRef<'nav' | 'swipe' | 'route' | null>(null);
   const activeIndexRef = useRef(0);
   const [viewportWidth, setViewportWidth] = useState(0);
 
@@ -133,6 +135,7 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
 
         programmaticTargetIndexRef.current = nextIndex;
         activeIndexRef.current = nextIndex;
+        navigationSourceRef.current = options?.source ?? 'route';
         toggleSwipeMode(true);
 
         if (options?.source === 'nav' && !options.immediate) {
@@ -172,9 +175,19 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
         clearNavigationMode();
 
         if (nextPath) {
+          if (navigationSourceRef.current === 'swipe' && nextPath !== activePath) {
+            trackEvent('screen_swipe', {
+              from: activePath,
+              to: nextPath,
+              navigation_surface: 'main_tabs',
+            });
+          }
+
           setActiveTabPath(nextPath);
           onNavigate(nextPath);
         }
+
+        navigationSourceRef.current = null;
       };
 
       if (programmaticTargetIndex !== null) {
@@ -198,6 +211,7 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
       clearNavigationMode();
       programmaticTargetIndexRef.current = null;
       gestureLockRef.current = null;
+      navigationSourceRef.current = null;
       touchStartXRef.current = touch.clientX;
       touchStartYRef.current = touch.clientY;
     };
@@ -215,6 +229,7 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
       }
 
       if (gestureLockRef.current === 'x') {
+        navigationSourceRef.current = 'swipe';
         toggleSwipeMode(true);
       }
     };
@@ -260,7 +275,7 @@ function SwipeContainer({ activePath, screens, onNavigate }: SwipeContainerProps
         settleTimerRef.current = null;
       }
     };
-  }, [clearNavigationMode, onNavigate, screens, toggleSwipeMode]);
+  }, [activePath, clearNavigationMode, onNavigate, screens, toggleSwipeMode]);
 
   return (
     <main
