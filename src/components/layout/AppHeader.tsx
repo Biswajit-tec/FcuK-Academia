@@ -30,7 +30,7 @@ export default function AppHeader({
   const pathname = usePathname();
   const { themeConfig } = useTheme();
   const { user } = useUser();
-  const { loading, refreshing, refreshDashboard } = useDashboardDataContext();
+  const { loading, refreshing, isStale, refreshDashboard } = useDashboardDataContext();
   const motionProps = getInteractiveMotion(themeConfig.motion);
   const [profileOpen, setProfileOpen] = useState(false);
   const isSyncing = loading || refreshing;
@@ -81,6 +81,7 @@ export default function AppHeader({
   return (
     <>
       <header className={cn('flex items-center justify-between gap-4', className)}>
+        {/* ... existing header content ... */}
         <div className="flex h-11 w-11 shrink-0 items-center justify-center">
           {leading}
         </div>
@@ -102,7 +103,7 @@ export default function AppHeader({
               whileTap={motionProps.whileTap}
               transition={motionProps.transition}
               className="theme-icon-button flex items-center justify-center"
-              aria-label={isSyncing ? 'Syncing data' : 'Sync data'}
+              aria-label={isStale ? 'Reconnect to refresh' : isSyncing ? 'Syncing data' : 'Sync data'}
               disabled={isSyncing}
             >
               <motion.span
@@ -110,12 +111,33 @@ export default function AppHeader({
                 transition={isSyncing ? { duration: 0.9, repeat: Infinity, ease: 'linear' } : { duration: 0.2 }}
                 className="flex items-center justify-center"
               >
-                <RefreshCw size={18} className="text-primary" />
+                <RefreshCw size={18} className={cn(isStale ? "text-error" : "text-primary")} />
               </motion.span>
             </motion.button>
           ) : null}
         </div>
       </header>
+
+      {isStale && !isSyncing && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className="mt-2 overflow-hidden"
+        >
+          <div 
+            className="flex items-center justify-center gap-2 rounded-lg py-2 px-3 text-center"
+            style={{ 
+              background: 'color-mix(in srgb, var(--error) 8%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--error) 20%, transparent)' 
+            }}
+          >
+            <div className="h-1.5 w-1.5 rounded-full bg-error animate-pulse" />
+            <span className="font-label text-[10px] font-bold uppercase tracking-wider text-error">
+              Live data unavailable — reconnect to refresh
+            </span>
+          </div>
+        </motion.div>
+      )}
 
       <ProfileCardDialog open={profileOpen} onClose={() => setProfileOpen(false)} user={user} />
     </>

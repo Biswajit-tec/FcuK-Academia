@@ -9,7 +9,8 @@ import {
   type UserSession,
 } from '@/lib/server/session';
 
-const SNAPSHOT_TTL_MS = 1000 * 60 * 2;
+const SNAPSHOT_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
+const SESSION_REFRESH_THRESHOLD_MS = 1000 * 60 * 60; // 1 hour
 
 function isSnapshotUsable(snapshot: SessionSnapshot) {
   const hasName = Boolean(snapshot.userInfo.name?.trim());
@@ -21,11 +22,21 @@ function isSnapshotUsable(snapshot: SessionSnapshot) {
 export async function getCachedDashboardData(sessionId: string, session: UserSession, options?: { forceRefresh?: boolean }) {
   const forceRefresh = options?.forceRefresh ?? false;
   const cached = await getSessionSnapshot(sessionId);
+  
+  // Decide if we should refresh the app session timestamp (throttled to once per hour)
+  let updatedSession = session;
+  if (Date.now() - session.lastRefreshedAt > SESSION_REFRESH_THRESHOLD_MS) {
+    updatedSession = {
+      ...session,
+      lastRefreshedAt: Date.now(),
+    };
+  }
+
   if (!forceRefresh && cached && Date.now() - cached.updatedAt < SNAPSHOT_TTL_MS && isSnapshotUsable(cached)) {
     return {
       snapshot: cached,
       refreshed: false,
-      session,
+      session: updatedSession,
     };
   }
 
@@ -36,9 +47,9 @@ export async function getCachedDashboardData(sessionId: string, session: UserSes
   const result = await getDashboardData(session.cookies);
   if (result.status !== 200) {
     return {
-      snapshot: null,
+      snapshot: cached || null,
       refreshed: false,
-      session,
+      session: updatedSession,
       error: result.error ?? 'session expired',
     };
   }
@@ -60,7 +71,7 @@ export async function getCachedDashboardData(sessionId: string, session: UserSes
     snapshot,
     refreshed: true,
     session: {
-      ...session,
+      ...updatedSession,
       cookies: result.cookies,
     },
   };

@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       markList: result.snapshot.markList,
       timetable: result.snapshot.timetable,
       calendar: result.snapshot.calendar,
+      isStale: !result.refreshed && result.error === 'session expired',
     });
     return result.session ? applySessionCookie(jsonResponse, result.session) : jsonResponse;
   } catch (error) {

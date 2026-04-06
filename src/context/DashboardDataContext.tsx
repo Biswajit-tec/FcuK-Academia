@@ -16,6 +16,7 @@ interface DashboardDataContextValue {
   calendar: RawCalendarMonth[];
   loading: boolean;
   refreshing: boolean;
+  isStale: boolean;
   error: string | null;
   refreshDashboard: (source?: string) => Promise<void>;
 }
@@ -32,6 +33,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
   const [calendar, setCalendar] = useState<RawCalendarMonth[]>(cachedDashboard?.calendar ?? []);
   const [loading, setLoading] = useState(!cachedDashboard);
   const [refreshing, setRefreshing] = useState(false);
+  const [isStale, setIsStale] = useState(cachedDashboard?.isStale ?? false);
   const [error, setError] = useState<string | null>(null);
   const autoSyncStartedRef = useRef(false);
 
@@ -62,6 +64,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       setMarkList(data.markList);
       setTimetable(data.timetable);
       setCalendar(data.calendar);
+      setIsStale(data.isStale ?? false);
     } catch (loadError) {
       if (cachedDashboard) {
         setUserInfo(cachedDashboard.userInfo);
@@ -69,6 +72,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         setMarkList(cachedDashboard.markList);
         setTimetable(cachedDashboard.timetable);
         setCalendar(cachedDashboard.calendar);
+        setIsStale(true);
         setError(null);
       } else {
         setError(loadError instanceof ApiError ? loadError.message : 'server error');
@@ -110,6 +114,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         calendar,
         loading,
         refreshing,
+        isStale,
         error,
         refreshDashboard: async (source?: string) => {
           trackEvent('data_refresh_triggered', {

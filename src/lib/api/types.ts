@@ -6,6 +6,7 @@ export interface DashboardData {
   markList: RawMarkItem[];
   timetable: RawTimetableItem[];
   calendar: RawCalendarMonth[];
+  isStale?: boolean;
 }
 
 export interface ApiErrorShape {

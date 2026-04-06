@@ -14,7 +14,7 @@ import type {
   SessionCookies,
 } from '@/lib/server/academia';
 
-const SESSION_TTL_SECONDS = 60 * 60 * 12;
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const SESSION_SECRET_FALLBACK = 'fcuk-academia-session-secret';
 const SESSION_DIR = process.env.NODE_ENV === 'production' 
   ? path.join('/tmp', '.session-store')
@@ -24,6 +24,7 @@ export interface UserSession {
   email: string;
   cookies: SessionCookies;
   createdAt: number;
+  lastRefreshedAt: number;
 }
 
 export interface SessionSnapshot {

@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       email,
       cookies: authResult.data.cookies,
       createdAt: Date.now(),
+      lastRefreshedAt: Date.now(),
     };
     const cookieValue = createSessionCookieValue(session);
     const response = NextResponse.json({ success: true });
