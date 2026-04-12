@@ -153,26 +153,6 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
       className="liquid-nav fixed bottom-4 left-1/2 z-50 w-[min(92%,28rem)] max-w-[28rem] -translate-x-1/2 sm:w-[min(92%,30rem)] sm:max-w-[30rem] lg:w-[min(88%,34rem)] lg:max-w-[34rem]"
       aria-label="Primary"
     >
-      <svg aria-hidden="true" className="absolute h-0 w-0 overflow-hidden">
-        <defs>
-          <filter id="liquid-nav-glass" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="0.9" result="blurred" />
-            <feColorMatrix
-              in="blurred"
-              type="matrix"
-              values="
-                1 0 0 0 0
-                0 1 0 0 0
-                0 0 1 0 0
-                0 0 0 18 -8
-              "
-              result="goo"
-            />
-            <feBlend in="SourceGraphic" in2="goo" />
-          </filter>
-        </defs>
-      </svg>
-
       <div
         className="relative overflow-hidden rounded-[34px] border p-[5px] backdrop-blur-[18px]"
         style={{
@@ -180,6 +160,8 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
           background: 'linear-gradient(180deg, color-mix(in srgb, var(--nav-background) 92%, rgba(255,255,255,0.04)) 0%, color-mix(in srgb, var(--surface) 88%, transparent) 100%)',
           boxShadow: 'var(--elevation-nav)',
           paddingBottom: `calc(5px + max(env(safe-area-inset-bottom), 0px))`,
+          transform: 'translateZ(0)',
+          willChange: 'transform',
         }}
       >
         <div
@@ -188,7 +170,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
         />
         <div
           className="pointer-events-none absolute inset-x-5 top-0 h-16 opacity-75 blur-2xl"
-          style={{ background: 'radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 24%, transparent), transparent 72%)' }}
+          style={{ background: 'radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 24%, transparent), transparent 72%)', transform: 'translateZ(0)' }}
         />
 
         <motion.div
@@ -208,13 +190,13 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
           }}
         >
           <div
-            className="relative h-full w-full overflow-hidden border"
+            className="relative h-full w-full overflow-hidden border backdrop-blur-md"
             style={{
               borderRadius: '26px',
               borderColor: 'color-mix(in srgb, var(--primary) 36%, rgba(255,255,255,0.28))',
               background: 'linear-gradient(180deg, color-mix(in srgb, rgba(255,255,255,0.26) 48%, var(--surface-highlight)) 0%, color-mix(in srgb, var(--primary) 10%, var(--surface-elevated) 90%) 100%)',
               boxShadow: '0 16px 32px rgba(0, 0, 0, 0.22), 0 0 24px color-mix(in srgb, var(--primary) 18%, transparent)',
-              filter: 'url(#liquid-nav-glass)',
+              transform: 'translateZ(0)',
             }}
           >
             <div
@@ -232,11 +214,11 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
             />
             <div
               className="absolute inset-x-4 top-1 h-4 rounded-full blur-lg"
-              style={{ background: 'color-mix(in srgb, rgba(255,255,255,0.34) 75%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, rgba(255,255,255,0.34) 75%, transparent)', transform: 'translateZ(0)' }}
             />
             <div
               className="absolute inset-x-3 bottom-0 h-5 rounded-full blur-xl opacity-80"
-              style={{ background: 'color-mix(in srgb, var(--primary) 26%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, var(--primary) 26%, transparent)', transform: 'translateZ(0)' }}
             />
           </div>
         </motion.div>
