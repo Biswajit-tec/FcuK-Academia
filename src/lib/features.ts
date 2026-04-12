@@ -5,6 +5,6 @@ export const FEATURES = {
 export const WHATSAPP_COMMUNITY_POPUP_CONFIG = {
   sessionKey: 'hasSeenCommunityPopup',
   cooldownKey: 'lastCommunityPopupShownAt',
-  cooldownMs: 24 * 60 * 60 * 1000,
+  cooldownMs: 1 * 60 * 60 * 1000,
   whatsappUrl: 'https://chat.whatsapp.com/GxFXJHIpgWw6APJuYpGKjF',
 } as const;
