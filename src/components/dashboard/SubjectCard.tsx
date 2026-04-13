@@ -308,10 +308,10 @@ function MarksCardBack({
           <p className="theme-kicker">marks trend</p>
           <h3
             className={cn(
-              'mt-1.5 font-headline font-bold lowercase leading-[0.92] text-on-surface',
+              'mt-1 line-clamp-2 font-headline font-bold lowercase leading-[0.85] text-on-surface',
               isCompact
-                ? 'text-[1.4rem] max-[380px]:text-[1.22rem]'
-                : 'text-[1.55rem] max-[380px]:text-[1.35rem]',
+                ? 'text-[1.3rem] max-[380px]:text-[1.15rem]'
+                : 'text-[1.45rem] max-[380px]:text-[1.25rem]',
             )}
           >
             {subject.name}
@@ -333,7 +333,7 @@ function MarksCardBack({
 
       <div
         className={cn(
-          'mt-3.5 flex min-h-0 flex-1 flex-col rounded-[18px] border max-[380px]:mt-3 max-[380px]:rounded-[16px]',
+          'mt-2.5 flex min-h-0 flex-1 flex-col rounded-[18px] border max-[380px]:mt-2 max-[380px]:rounded-[16px]',
           isCompact ? 'p-2.5 max-[380px]:p-2' : 'p-3 max-[380px]:p-2.5',
         )}
         style={{
@@ -387,7 +387,8 @@ function MarksCardBack({
 
         <div
           className={cn(
-            'grid grid-cols-2',
+            'grid',
+            chartData.length === 3 ? 'grid-cols-3' : 'grid-cols-2',
             isCompact ? 'mt-2 gap-1.5 max-[380px]:mt-1.5 max-[380px]:gap-1' : 'mt-2.5 gap-2 max-[380px]:mt-2 max-[380px]:gap-1.5',
           )}
         >
