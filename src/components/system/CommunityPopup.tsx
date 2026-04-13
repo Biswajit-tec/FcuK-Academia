@@ -191,7 +191,7 @@ export default function CommunityPopup() {
           transition={{ duration: 0.2, ease: EASE_OUT }}
           className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6"
           style={backdropStyle}
-          onClick={(event) => {
+          onClick={() => {
             // Dismissal via backdrop click disabled by request
           }}
         >

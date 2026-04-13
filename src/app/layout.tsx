@@ -6,6 +6,7 @@ import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { AppStateProvider } from "@/context/AppStateContext";
 import { DashboardDataProvider } from "@/context/DashboardDataContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppLayout from "@/components/layout/AppLayout";
 import GoogleAnalytics from "@/components/system/GoogleAnalytics";
@@ -102,10 +103,12 @@ export default async function RootLayout({
         <ThemeProvider initialTheme={initialTheme}>
           <DashboardDataProvider>
             <AppStateProvider>
-              <CommunityPopup />
-              <AppLayout>
-                {children}
-              </AppLayout>
+              <NotificationProvider>
+                <CommunityPopup />
+                <AppLayout>
+                  {children}
+                </AppLayout>
+              </NotificationProvider>
             </AppStateProvider>
           </DashboardDataProvider>
         </ThemeProvider>

@@ -23,8 +23,10 @@ import GlassCard from '@/components/ui/GlassCard';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { useAppState } from '@/context/AppStateContext';
 import { useDashboardDataContext } from '@/context/DashboardDataContext';
+import { useNotificationContext } from '@/context/NotificationContext';
 import { useTheme } from '@/context/ThemeContext';
 import { formatRegistrationNumber, getCompactCourseLabel } from '@/lib/academia-ui';
+import { clearNotificationToken } from '@/lib/notifications/getToken';
 import { getInteractiveMotion } from '@/lib/motion';
 import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
@@ -34,10 +36,14 @@ export default function SettingsPage() {
   const { user, loading } = useUser();
   const { refreshing, refreshDashboard } = useDashboardDataContext();
   const { activeDayOrder } = useAppState();
+  const {
+    notificationsEnabled,
+    permissionState,
+    setNotificationsEnabled,
+  } = useNotificationContext();
   const router = useRouter();
   const motionProps = getInteractiveMotion(themeConfig.motion);
   const [logoutLoading, setLogoutLoading] = useState(false);
-  const [notificationToastOpen, setNotificationToastOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const compactCourse = getCompactCourseLabel(user);
   const formattedRegNumber = formatRegistrationNumber(user?.regNumber);
@@ -50,6 +56,7 @@ export default function SettingsPage() {
 
   async function handleLogout() {
     setLogoutLoading(true);
+    await clearNotificationToken();
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/login');
     router.refresh();
@@ -62,22 +69,27 @@ export default function SettingsPage() {
     router.refresh();
   }
 
-  function handleNotificationPress() {
-    setNotificationToastOpen(false);
-    window.requestAnimationFrame(() => {
-      setNotificationToastOpen(true);
-    });
+  async function handleNotificationPress() {
+    await setNotificationsEnabled(!notificationsEnabled);
   }
 
-  useEffect(() => {
-    if (!notificationToastOpen) return;
+  const notificationSubtitle = useMemo(() => {
+    if (notificationsEnabled && permissionState === 'granted') {
+      return 'push + in-app alerts are live. expect funny saves before college chaos hits.';
+    }
 
-    const timeoutId = window.setTimeout(() => {
-      setNotificationToastOpen(false);
-    }, 3400);
+    if (notificationsEnabled && (permissionState === 'denied' || permissionState === 'unsupported')) {
+      return 'fallback mode is active. in-app alerts still work even when push cannot.';
+    }
 
-    return () => window.clearTimeout(timeoutId);
-  }, [notificationToastOpen]);
+    return 'turn this on for class alerts, attendance warnings, mark drops, and admin broadcasts.';
+  }, [notificationsEnabled, permissionState]);
+
+  const notificationStatusLabel = useMemo(() => {
+    if (!notificationsEnabled) return 'off';
+    if (permissionState === 'granted') return 'live';
+    return 'fallback';
+  }, [notificationsEnabled, permissionState]);
 
   return (
     <div className="space-y-7 pb-36 pt-4">
@@ -164,10 +176,12 @@ export default function SettingsPage() {
             <ToggleRow
               icon={Bell}
               title="notifications"
-              subtitle="still cooking. tap here for the vibe check instead of enabling anything."
-              checked={false}
-              statusLabel="soon"
-              onChange={handleNotificationPress}
+              subtitle={notificationSubtitle}
+              checked={notificationsEnabled}
+              statusLabel={notificationStatusLabel}
+              onChange={() => {
+                void handleNotificationPress();
+              }}
               motionProps={motionProps}
             />
             <PreferenceLink
@@ -205,7 +219,6 @@ export default function SettingsPage() {
       </section>
 
       <PrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
-      <NotificationToast open={notificationToastOpen} />
     </div>
   );
 }
@@ -490,39 +503,6 @@ function ToggleRow({
   );
 }
 
-function NotificationToast({ open }: { open: boolean }) {
-  return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 16, scale: 0.98 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="pointer-events-none fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-[940] mx-auto w-full max-w-sm"
-        >
-          <div
-            className="theme-card border px-4 py-4"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, transparent) 0%, color-mix(in srgb, var(--surface-elevated) 90%, var(--accent) 10%) 100%)',
-              borderColor: 'color-mix(in srgb, var(--accent) 28%, var(--card-border))',
-              boxShadow: 'var(--elevation-floating)',
-            }}
-          >
-            <p className="theme-kicker" style={{ color: 'var(--accent)' }}>feature lab</p>
-            <h3 className="mt-1 font-headline text-xl font-bold text-on-surface">
-              notifications are cooking...
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Stay tuned, something awesome is coming soon. No toggle, no backend, no permission popup today.
-            </p>
-          </div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
-  );
-}
-
 function SyncRow({
   syncing,
   onSync,
@@ -628,8 +608,12 @@ function PrivacyRow({
 
 function CommunityRow() {
   const handleCommunityClick = () => {
-    if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
-      (window as any).gtag('event', 'community_click', {
+    const analyticsWindow = window as Window & {
+      gtag?: (event: string, action: string, params?: Record<string, string>) => void;
+    };
+
+    if (typeof analyticsWindow.gtag === 'function') {
+      analyticsWindow.gtag('event', 'community_click', {
         location: 'settings'
       });
     }
