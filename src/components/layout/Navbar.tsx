@@ -244,27 +244,33 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
            initial={{ scale: 0, opacity: 0 }}
            animate={{ scale: 1, opacity: 1 }}
            transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
-           className="pointer-events-auto relative"
+           className="pointer-events-auto relative flex items-center justify-center"
         >
+          {/* Pulse ring underneath */}
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-full bg-[var(--primary)] blur-md pointer-events-none"
+          />
+
           <Link href="/rate-my-faculty" passHref>
             <motion.div
-              className="group flex aspect-square h-[4.2rem] sm:h-[4.5rem] items-center justify-center rounded-full outline-none"
+              className="group relative flex aspect-square h-[4.2rem] sm:h-[4.5rem] items-center justify-center rounded-full outline-none"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.92 }}
             >
               <div 
-                className="absolute inset-0 rounded-full bg-gradient-to-tr from-[var(--primary)] via-[var(--primary-soft)] to-[color-mix(in_srgb,white_40%,var(--primary))] transition-all duration-300 group-hover:blur-md"
+                className="absolute inset-0 rounded-full bg-gradient-to-tr from-[var(--primary)] via-[var(--primary-soft)] to-white transition-all duration-300 group-hover:blur-md"
                 style={{
-                  boxShadow: '0 0 20px color-mix(in srgb, var(--primary) 60%, transparent), 0 8px 16px rgba(0,0,0,0.3)',
+                  boxShadow: '0 0 30px color-mix(in srgb, var(--primary) 80%, transparent), 0 10px 25px rgba(0,0,0,0.5)',
                 }}
               />
-              <div className="absolute inset-[1.5px] rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--primary)_90%,white)] to-[color-mix(in_srgb,var(--primary)_80%,black)] flex items-center justify-center" />
-              <div className="absolute inset-0 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] pointer-events-none" />
-              <span className="relative z-10 text-[13px] font-extrabold tracking-widest text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]">
+              <div className="absolute inset-[1.5px] rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--primary)_80%,white)] to-[color-mix(in_srgb,var(--primary)_70%,black)] flex items-center justify-center shadow-[inset_0_2px_8px_rgba(255,255,255,0.4)]" />
+              <span className="relative z-10 text-[14px] font-black tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                 RMF
               </span>
               
-              <div className="absolute -top-10 scale-90 opacity-0 transition-all duration-300 group-hover:-top-12 group-hover:scale-100 group-hover:opacity-100 pointer-events-none whitespace-nowrap bg-[var(--surface-elevated)] backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 shadow-xl text-xs font-semibold text-[var(--text)]">
+              <div className="absolute -top-10 scale-90 opacity-0 transition-all duration-300 group-hover:-top-12 group-hover:scale-100 group-hover:opacity-100 pointer-events-none whitespace-nowrap bg-[var(--surface-elevated)] backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)] text-xs font-bold text-[var(--text)] uppercase tracking-widest">
                 Rate My Faculty
               </div>
             </motion.div>
