@@ -43,7 +43,7 @@
         <sub><b>Attendance Tracker</b></sub>
       </td>
       <td align="center" width="33%">
-        <img src="public/branding/timetable.png" width="300" alt="Timetable Preview"/><br/>
+        <img src="public/branding/timetable.png.jpeg" width="300" alt="Timetable Preview"/><br/>
         <sub><b>Live Timetable</b></sub>
       </td>
     </tr>
