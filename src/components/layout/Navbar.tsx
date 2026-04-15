@@ -1,9 +1,9 @@
 'use client';
 
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { BarChart2, Calendar, CheckSquare, Clock, Home, Settings, type LucideIcon } from 'lucide-react';
 
 import { useTheme } from '@/context/ThemeContext';
@@ -138,6 +138,8 @@ const NavItemButton = memo(function NavItemButton({
 
 function Navbar({ activePath, onNavigate }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const { themeConfig } = useTheme();
   const [mounted, setMounted] = useState(false);
   const resolvedPath = activePath ?? (pathname.startsWith('/settings') ? '/settings' : pathname);
@@ -145,96 +147,162 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
   const indicatorLeft = `calc(${NAV_INSET_PX}px + ${activeIndex} * ((100% - ${NAV_INSET_PX * 2}px) / ${navItems.length}))`;
   const indicatorWidth = `calc((100% - ${NAV_INSET_PX * 2}px) / ${navItems.length})`;
 
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setMounted(true);
-    });
+  // RMF Specific Navigation Setup
+  // RMF Specific Navigation Setup
+  const _isRmfRoute = pathname.startsWith('/rate-my-faculty');
+  const [optimisticRmfRoute, setOptimisticRmfRoute] = useState(_isRmfRoute);
 
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+  useEffect(() => {
+    setOptimisticRmfRoute(_isRmfRoute);
+  }, [_isRmfRoute]);
+
+  useEffect(() => {
+    // Proactively prefetch the opposite route so transitions resolve immediately
+    router.prefetch(optimisticRmfRoute ? '/' : '/rate-my-faculty');
+  }, [optimisticRmfRoute, router]);
+
+  const isRmfRoute = optimisticRmfRoute;
+  // Instead of an early return, we will conditionally render the contents inside the main flex row
+  // so the layout (left pill + right circle side-by-side) remains intact across the entire app.
 
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex items-end justify-between px-4 sm:px-6 xl:px-8 max-w-7xl mx-auto"
-      style={{
-        paddingBottom: `calc(16px + max(env(safe-area-inset-bottom), 0px))`,
-      }}
-    >
-      {/* LEFT: FLOATING NAVBAR */}
+    <>
+      {/* Global Transition Mask */}
       <AnimatePresence>
+        {isPending && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(20px)' }}
+            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[45] pointer-events-none bg-[var(--background)]/80 flex flex-col items-center justify-center gap-6"
+          >
+            {/* Smooth glowing spinner */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[var(--primary)]/20 blur-xl animate-pulse" />
+              <div className="w-12 h-12 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
+            </div>
+            
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] animate-pulse">
+              {!optimisticRmfRoute ? 'INITIALIZING FCUK...' : 'INITIALIZING RMF...'}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex items-end justify-between px-4 sm:px-6 xl:px-8 max-w-7xl mx-auto"
+        style={{
+          paddingBottom: `calc(16px + max(env(safe-area-inset-bottom), 0px))`,
+        }}
+      >
+        {/* LEFT: FLOATING NAVBAR */}
+      <AnimatePresence mode="wait">
         <motion.nav
+          key={isRmfRoute ? 'rmf-nav' : 'main-nav'}
           initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 60, opacity: 0 }}
           transition={{ type: "spring", stiffness: 260, damping: 25, delay: 0.1 }}
-          className="liquid-nav pointer-events-auto relative w-[85%] max-w-[28rem] sm:max-w-[32rem]"
-          aria-label="Primary"
+          className={`liquid-nav pointer-events-auto relative ${isRmfRoute ? 'w-auto' : 'w-[85%] max-w-[28rem] sm:max-w-[32rem]'}`}
+          aria-label={isRmfRoute ? 'RMF Navigation' : 'Primary'}
         >
-          <div
-            className="relative overflow-hidden rounded-full border p-[5px] backdrop-blur-xl"
-            style={{
-              borderColor: 'color-mix(in srgb, var(--border-strong) 40%, rgba(255,255,255,0.1))',
-              background: 'linear-gradient(180deg, color-mix(in srgb, var(--nav-background) 80%, rgba(0,0,0,0.4)) 0%, color-mix(in srgb, var(--surface) 80%, rgba(0,0,0,0.6)) 100%)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 16px rgba(255,255,255,0.02)',
-              transform: 'translateZ(0)',
-              willChange: 'transform',
-            }}
-          >
+          {isRmfRoute ? (
+            <div className="bg-[var(--surface-elevated)]/80 backdrop-blur-3xl border border-white/10 p-1.5 rounded-full shadow-2xl flex items-center gap-1">
+              {[
+                { name: 'Feed', href: '/rate-my-faculty' },
+                { name: 'Today', href: '/rate-my-faculty/today' },
+                { name: 'Rooms', href: '/rate-my-faculty/rooms' },
+              ].map((tab) => {
+                const active = pathname === tab.href;
+                return (
+                  <button
+                    key={tab.name}
+                    onClick={() => router.push(tab.href)}
+                    className={`relative px-4 sm:px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-bold tracking-widest transition-all outline-none ${
+                      active ? 'text-white' : 'text-on-surface-variant hover:text-white/80'
+                    }`}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="rmfLeftNavActive"
+                        className="absolute inset-0 bg-white/10 rounded-full"
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      />
+                    )}
+                    <span className="relative z-10">{tab.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
             <div
-              className="pointer-events-none absolute inset-0 opacity-80"
-              style={{ background: 'var(--surface-gradient)' }}
-            />
-            
-            <motion.div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-[5px] top-[5px] flex items-center justify-center"
-              animate={{ left: indicatorLeft }}
-              initial={false}
-              transition={{
-                duration: 0.38,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              className="relative overflow-hidden rounded-full border p-[5px] backdrop-blur-xl"
               style={{
-                width: indicatorWidth,
-                willChange: 'left, transform',
+                borderColor: 'color-mix(in srgb, var(--border-strong) 40%, rgba(255,255,255,0.1))',
+                background: 'linear-gradient(180deg, color-mix(in srgb, var(--nav-background) 80%, rgba(0,0,0,0.4)) 0%, color-mix(in srgb, var(--surface) 80%, rgba(0,0,0,0.6)) 100%)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 16px rgba(255,255,255,0.02)',
                 transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden',
+                willChange: 'transform',
               }}
             >
               <div
-                className="relative h-full aspect-square overflow-hidden border backdrop-blur-md"
+                className="pointer-events-none absolute inset-0 opacity-80"
+                style={{ background: 'var(--surface-gradient)' }}
+              />
+              
+              <motion.div
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-[5px] top-[5px] flex items-center justify-center"
+                animate={{ left: indicatorLeft }}
+                initial={false}
+                transition={{
+                  duration: 0.38,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 style={{
-                  borderRadius: '999px',
-                  borderColor: 'color-mix(in srgb, var(--primary) 36%, rgba(255,255,255,0.28))',
-                  background: 'linear-gradient(180deg, color-mix(in srgb, rgba(255,255,255,0.26) 48%, var(--surface-highlight)) 0%, color-mix(in srgb, var(--primary) 10%, var(--surface-elevated) 90%) 100%)',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2), 0 0 16px color-mix(in srgb, var(--primary) 40%, transparent)',
+                  width: indicatorWidth,
+                  willChange: 'left, transform',
                   transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
                 }}
               >
                 <div
-                  className="absolute inset-[1px]"
+                  className="relative h-full aspect-square overflow-hidden border backdrop-blur-md"
                   style={{
                     borderRadius: '999px',
-                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 22%, rgba(255,255,255,0.18)) 0%, color-mix(in srgb, var(--primary) 12%, transparent) 48%, rgba(255,255,255,0.04) 100%)',
+                    borderColor: 'color-mix(in srgb, var(--primary) 36%, rgba(255,255,255,0.28))',
+                    background: 'linear-gradient(180deg, color-mix(in srgb, rgba(255,255,255,0.26) 48%, var(--surface-highlight)) 0%, color-mix(in srgb, var(--primary) 10%, var(--surface-elevated) 90%) 100%)',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2), 0 0 16px color-mix(in srgb, var(--primary) 40%, transparent)',
+                    transform: 'translateZ(0)',
                   }}
-                />
-              </div>
-            </motion.div>
+                >
+                  <div
+                    className="absolute inset-[1px]"
+                    style={{
+                      borderRadius: '999px',
+                      background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 22%, rgba(255,255,255,0.18)) 0%, color-mix(in srgb, var(--primary) 12%, transparent) 48%, rgba(255,255,255,0.04) 100%)',
+                    }}
+                  />
+                </div>
+              </motion.div>
 
-            <div className="relative grid grid-cols-6 items-center">
-              {navItems.map((item) => (
-                <NavItemButton
-                  key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  isActive={resolvedPath === item.href}
-                  label={item.label}
-                  motionPreset={themeConfig.motion}
-                  mounted={mounted}
-                  onNavigate={onNavigate}
-                />
-              ))}
+              <div className="relative grid grid-cols-6 items-center">
+                {navItems.map((item) => (
+                  <NavItemButton
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    isActive={resolvedPath === item.href}
+                    label={item.label}
+                    motionPreset={themeConfig.motion}
+                    mounted={mounted}
+                    onNavigate={onNavigate}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </motion.nav>
       </AnimatePresence>
 
@@ -253,8 +321,19 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
             className="absolute inset-0 rounded-full bg-[var(--primary)] blur-md pointer-events-none"
           />
 
-          <Link href="/rate-my-faculty" passHref>
+          <button 
+            type="button"
+            onClick={() => {
+              const targetURL = isRmfRoute ? "/" : "/rate-my-faculty";
+              setOptimisticRmfRoute(!isRmfRoute); // Instant UI resolution
+              startTransition(() => {
+                router.push(targetURL);
+              });
+            }}
+            className="outline-none"
+          >
             <motion.div
+              layout
               className="group relative flex aspect-square h-[4.2rem] sm:h-[4.5rem] items-center justify-center rounded-full outline-none"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.92 }}
@@ -266,18 +345,45 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                 }}
               />
               <div className="absolute inset-[1.5px] rounded-full bg-gradient-to-br from-[color-mix(in_srgb,var(--primary)_80%,white)] to-[color-mix(in_srgb,var(--primary)_70%,black)] flex items-center justify-center shadow-[inset_0_2px_8px_rgba(255,255,255,0.4)]" />
-              <span className="relative z-10 text-[14px] font-black tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                RMF
-              </span>
+              
+              <div className="relative z-10 w-full h-full flex items-center justify-center">
+                <AnimatePresence>
+                  {isRmfRoute ? (
+                    <motion.div
+                      key="fcuk"
+                      initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                      className="absolute inset-0 flex flex-col items-center justify-center text-[13px] font-black tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] leading-tight"
+                    >
+                      <span>FcuK</span>
+                      <span className="text-[6px] tracking-[0.3em] opacity-80">ESTD</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="rmf"
+                      initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                      className="absolute inset-0 flex items-center justify-center text-[14px] font-black tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                    >
+                      RMF
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               
               <div className="absolute -top-10 scale-90 opacity-0 transition-all duration-300 group-hover:-top-12 group-hover:scale-100 group-hover:opacity-100 pointer-events-none whitespace-nowrap bg-[var(--surface-elevated)] backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)] text-xs font-bold text-[var(--text)] uppercase tracking-widest">
-                Rate My Faculty
+                {isRmfRoute ? 'Return to FcuK' : 'Rate My Faculty'}
               </div>
             </motion.div>
-          </Link>
+          </button>
         </motion.div>
       </AnimatePresence>
     </div>
+    </>
   );
 }
 
