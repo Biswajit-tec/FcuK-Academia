@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { X, Star, MessageCircle, Pencil, Smile } from 'lucide-react';
 import { useAppState } from '@/context/AppStateContext';
 import { featureFlags } from '@/config/features';
@@ -18,6 +19,7 @@ const INITIAL_DELAY_MS = 2500; // Wait 2.5s before showing popup to not block in
 export default function RmfAnnouncementPopup() {
   const { isAnnouncementActive, setIsAnnouncementActive } = useAppState();
   const { themeConfig } = useTheme();
+  const router = useRouter();
   const [shouldRender, setShouldRender] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -63,6 +65,20 @@ export default function RmfAnnouncementPopup() {
     setTimeout(() => {
       setShouldRender(false);
     }, 300);
+  };
+
+  const handleExplore = () => {
+    setIsAnnouncementActive(false); // Update global state immediately
+    setIsClosing(true); // Trigger exit animation
+    
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, Date.now().toString());
+    } catch (e) {}
+
+    // Brief delay to allow the exit animation to start before the page transition
+    setTimeout(() => {
+      router.push('/rate-my-faculty');
+    }, 150);
   };
 
   if (!shouldRender) return null;
@@ -225,7 +241,7 @@ export default function RmfAnnouncementPopup() {
                         src={`${RMF_LOGOS_PATH}/hero.png`} 
                         alt="Faculty Collaboration" 
                         fill 
-                        className="object-contain" 
+                        className="object-cover" 
                         priority
                       />
                     </div>
@@ -286,7 +302,7 @@ export default function RmfAnnouncementPopup() {
                   variants={popVariants}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleDismiss}
+                  onClick={handleExplore}
                   className="relative group w-full py-3 sm:py-3.5 rounded-full font-bold text-[var(--background)] bg-[var(--primary)] overflow-hidden isolate"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out z-0" />

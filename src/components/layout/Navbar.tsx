@@ -354,9 +354,15 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
               <div 
                 className="absolute inset-0 rounded-full backdrop-blur-2xl transition-all duration-500 group-hover:duration-300"
                 style={{
-                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, rgba(255,255,255,0.05)), color-mix(in srgb, var(--primary) 6%, rgba(255,255,255,0.02)))',
-                  border: '1px solid color-mix(in srgb, var(--primary) 20%, rgba(255,255,255,0.12))',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 16px color-mix(in srgb, var(--primary) 8%, transparent)',
+                  background: themeConfig.mode === 'light' 
+                    ? 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 20%, rgba(255,255,255,0.6)), color-mix(in srgb, var(--primary) 10%, rgba(255,255,255,0.3)))' 
+                    : 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, rgba(255,255,255,0.05)), color-mix(in srgb, var(--primary) 8%, rgba(255,255,255,0.02)))',
+                  border: themeConfig.mode === 'light'
+                    ? '1.5px solid color-mix(in srgb, var(--primary) 25%, rgba(0, 0, 0, 0.05))'
+                    : '1px solid color-mix(in srgb, var(--primary) 20%, rgba(255,255,255,0.12))',
+                  boxShadow: themeConfig.mode === 'light'
+                    ? `0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 16px color-mix(in srgb, var(--primary) 10%, rgba(255,255,255,0.8))`
+                    : '0 8px 32px rgba(0, 0, 0, 0.25), inset 0 0 16px rgba(255,255,255,0.05)',
                 }}
               />
               
@@ -369,14 +375,18 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
                       exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                      className={cn(
-                        "absolute inset-0 flex flex-col items-center justify-center text-[13px] font-black tracking-widest uppercase leading-tight transition-colors duration-300",
-                        "text-[var(--text)]",
-                        themeConfig.mode === 'dark' && "drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
-                      )}
+                      className="absolute inset-0 flex items-center justify-center p-1.5"
                     >
-                      <span>FcuK</span>
-                      <span className="text-[5.5px] tracking-[0.1em] opacity-80">Academia</span>
+                      <img 
+                        src="/images/rmf/fcuk-logo.png" 
+                        alt="FcuK Academia" 
+                        className="w-full h-full object-contain"
+                        style={{
+                          filter: themeConfig.mode === 'light' 
+                            ? 'brightness(0) opacity(0.85)' 
+                            : 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))'
+                        }}
+                      />
                     </motion.div>
                   ) : (
                     <motion.div
@@ -385,13 +395,18 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
                       exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                      className={cn(
-                        "absolute inset-0 flex items-center justify-center text-[14px] font-black tracking-widest uppercase transition-colors duration-300",
-                        "text-[var(--text)]",
-                        themeConfig.mode === 'dark' && "drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
-                      )}
+                      className="absolute inset-0 flex items-center justify-center p-1.5"
                     >
-                      RMF
+                      <img 
+                        src={themeConfig.mode === 'light' ? "/images/rmf/rmf-logo-light.png" : "/images/rmf/rmf-logo.png"} 
+                        alt="RMF" 
+                        className="w-full h-full object-contain"
+                        style={{
+                          filter: themeConfig.mode === 'light' 
+                            ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))' 
+                            : 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))'
+                        }}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
