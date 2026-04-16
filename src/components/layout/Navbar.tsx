@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { BarChart2, Calendar, CheckSquare, Clock, Home, Settings, type LucideIcon } from 'lucide-react';
 
 import { useTheme } from '@/context/ThemeContext';
+import { useAppState } from '@/context/AppStateContext';
 import { getInteractiveMotion } from '@/lib/motion';
 import type { ThemeMotionPreset } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -148,6 +149,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { themeConfig } = useTheme();
+  const { isAnnouncementActive } = useAppState();
   const [mounted, setMounted] = useState(false);
   const resolvedPath = activePath ?? (pathname.startsWith('/settings') ? '/settings' : pathname);
   
@@ -216,7 +218,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
         }}
       >
         {/* LEFT: FLOATING NAVBAR */}
-      <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait">
           <motion.nav
             key={isRmfRoute ? 'rmf-nav' : 'main-nav'}
             initial={{ y: 60, opacity: 0 }}
@@ -327,9 +329,9 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
               </div>
             </div>
           </motion.nav>
-      </AnimatePresence>
+        </AnimatePresence>
 
-      {/* RIGHT: FLOATING CTA BUTTON */}
+        {/* RIGHT: FLOATING CTA BUTTON */}
         <div className="pointer-events-auto relative flex items-center justify-center">
 
           <button 
@@ -401,7 +403,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
             </motion.div>
           </button>
         </div>
-    </div>
+      </div>
     </>
   );
 }
