@@ -51,7 +51,7 @@ const getWittyTagline = (stats: FacultyStats | null, overall: number, count: num
 
   if (overall >= 4.5) return 'certified legend status 👑';
   if (overall < 2.5) return 'attendance destroyer 💔';
-  
+
   if (highest === 'strictness' || lowest === 'gradingFairness') return 'surprise test final boss 💀';
   if (highest === 'gradingFairness') return 'marks dealer energy 💸';
   if (highest === 'approachability') return 'students vibing 🌊';
@@ -65,6 +65,7 @@ const noiseSvg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='ht
 
 export default function RateMyFacultyList() {
   const router = useRouter();
+  const [isPending, startTransition] = React.useTransition();
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [college, setCollege] = useState<College | null>(null);
   const [search, setSearch] = useState('');
@@ -110,7 +111,7 @@ export default function RateMyFacultyList() {
   const handleAddFaculty = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFaculty.name.trim()) return;
-    
+
     setIsCreating(true);
     setAddError('');
 
@@ -122,7 +123,7 @@ export default function RateMyFacultyList() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      
+
       // Reset form and close
       setNewFaculty({ name: '', designation: '', department: '' });
       setShowAddForm(false);
@@ -138,8 +139,8 @@ export default function RateMyFacultyList() {
     let filtered = faculties;
     if (debouncedSearch.trim() !== '') {
       const q = debouncedSearch.toLowerCase();
-      filtered = filtered.filter((f) => 
-        f.name.toLowerCase().includes(q) || 
+      filtered = filtered.filter((f) =>
+        f.name.toLowerCase().includes(q) ||
         (f.department && f.department.toLowerCase().includes(q))
       );
     }
@@ -159,7 +160,7 @@ export default function RateMyFacultyList() {
 
   return (
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)]">
-      
+
       {/* Global Background Fix */}
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         {/* Base dark gradient matching dark mode style */}
@@ -171,30 +172,40 @@ export default function RateMyFacultyList() {
       </div>
 
       {/* Minimal Top bar - Seamless Integration */}
-      <motion.div 
+      <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="sticky top-0 z-40 px-4 sm:px-6 py-4 flex items-center justify-between pointer-events-none"
       >
         <div className="pointer-events-auto flex items-center gap-4">
-          <button onClick={() => router.back()} className="flex justify-center items-center p-2 rounded-full hover:bg-white/10 transition-colors bg-white/5 backdrop-blur-md border border-white/5 shadow-lg">
+          <button 
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'instant' });
+              // Trigger optimistic transition in navbar
+              window.dispatchEvent(new CustomEvent('rmf-nav-toggle', { detail: { isRmf: false } }));
+              startTransition(() => {
+                router.push('/');
+              });
+            }} 
+            className="flex justify-center items-center p-2 rounded-full hover:bg-white/10 transition-colors bg-white/5 backdrop-blur-md border border-white/5 shadow-lg"
+          >
             <ArrowLeft size={18} className="text-[var(--text)]" />
           </button>
         </div>
-        
+
         <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
           <span className="font-[var(--font-headline)] font-bold tracking-tight text-base text-[var(--text)] drop-shadow-sm opacity-80 uppercase tracking-widest">
             RateMyFaculty
           </span>
         </div>
-        
+
         <div className="w-10" />
       </motion.div>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
-        
+
         {/* College Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="flex justify-between items-end gap-4 mb-8"
         >
@@ -208,8 +219,8 @@ export default function RateMyFacultyList() {
           </div>
 
           <div className="bg-[var(--surface-elevated)]/60 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl shadow-lg shrink-0 flex flex-col items-center justify-center relative overflow-hidden">
-             <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary-soft)]/20 to-transparent pointer-events-none" />
-             <div className="text-2xl sm:text-3xl font-black font-[var(--font-headline)] text-[var(--primary)] drop-shadow-[0_0_10px_color-mix(in_srgb,var(--primary)_60%,transparent)] relative z-10">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary-soft)]/20 to-transparent pointer-events-none" />
+            <div className="text-2xl sm:text-3xl font-black font-[var(--font-headline)] text-[var(--primary)] drop-shadow-[0_0_10px_color-mix(in_srgb,var(--primary)_60%,transparent)] relative z-10">
               {faculties.length > 0 ? faculties.length : '...'}
             </div>
             <div className="text-[10px] tracking-widest font-bold uppercase text-on-surface-variant relative z-10 mt-1">
@@ -219,7 +230,7 @@ export default function RateMyFacultyList() {
         </motion.div>
 
         {/* Search & Actions */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}
           className="relative mb-6 group"
         >
@@ -229,13 +240,13 @@ export default function RateMyFacultyList() {
               <Search className="ml-4 text-on-surface-variant" size={20} />
               <input
                 type="text"
-                placeholder="search prof or victim..."
+                placeholder="search prof or dept"
                 className="w-full bg-transparent border-none outline-none text-[var(--text)] text-sm px-4 py-2 placeholder:text-on-surface-variant/60 font-medium"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button 
+            <button
               onClick={() => setShowAddForm(!showAddForm)}
               className="shrink-0 px-6 py-2 rounded-full font-bold tracking-widest text-[#1a1a1a] bg-[var(--primary)] hover:brightness-110 transition-all shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_50%,transparent)] uppercase text-xs"
             >
@@ -255,7 +266,7 @@ export default function RateMyFacultyList() {
             >
               <div className="bg-[var(--surface-elevated)]/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative">
                 <div className="absolute top-4 right-4">
-                  <button 
+                  <button
                     onClick={() => setShowAddForm(false)}
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
                   >
@@ -277,7 +288,7 @@ export default function RateMyFacultyList() {
                 <form onSubmit={handleAddFaculty} className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Full Name *</label>
-                    <input 
+                    <input
                       type="text" required
                       placeholder="Dr. John Smith"
                       value={newFaculty.name}
@@ -289,7 +300,7 @@ export default function RateMyFacultyList() {
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Designation</label>
-                      <input 
+                      <input
                         type="text"
                         placeholder="Associate Professor"
                         value={newFaculty.designation}
@@ -299,7 +310,7 @@ export default function RateMyFacultyList() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Department</label>
-                      <input 
+                      <input
                         type="text"
                         placeholder="Computer Science"
                         value={newFaculty.department}
@@ -309,7 +320,7 @@ export default function RateMyFacultyList() {
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     type="submit"
                     disabled={isCreating}
                     className="w-full py-4 rounded-2xl bg-[var(--primary)] text-[#1a1a1a] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all shadow-[0_0_20px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
@@ -323,7 +334,7 @@ export default function RateMyFacultyList() {
         </AnimatePresence>
 
         {/* Filter Pill Tabs */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="flex flex-wrap gap-2 mb-8"
         >
@@ -334,11 +345,10 @@ export default function RateMyFacultyList() {
                 whileTap={{ scale: 0.95 }}
                 key={type}
                 onClick={() => setSortBy(type)}
-                className={`relative px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full transition-all duration-300 overflow-hidden ${
-                  isActive 
-                    ? 'text-[var(--background)] bg-[var(--primary)] shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_40%,transparent)]' 
+                className={`relative px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full transition-all duration-300 overflow-hidden ${isActive
+                    ? 'text-[var(--background)] bg-[var(--primary)] shadow-[0_0_15px_color-mix(in_srgb,var(--primary)_40%,transparent)]'
                     : 'bg-[var(--surface-highlight)]/10 border border-white/5 text-[var(--text-muted)] hover:bg-[var(--surface-highlight)]/20 hover:text-[var(--text)]'
-                }`}
+                  }`}
               >
                 {isActive && (
                   <motion.div
@@ -379,7 +389,7 @@ export default function RateMyFacultyList() {
                   transition={{ duration: 0.3, delay: i < 15 ? i * 0.05 : 0 }}
                 >
                   <Link href={`/rate-my-faculty/${faculty.id}`}>
-                    <motion.div 
+                    <motion.div
                       whileHover={{ scale: 0.98 }}
                       whileTap={{ scale: 0.96 }}
                       className="group relative p-5 bg-[var(--surface)]/60 backdrop-blur-xl border border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"

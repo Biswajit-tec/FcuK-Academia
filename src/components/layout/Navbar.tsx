@@ -20,6 +20,13 @@ const navItems = [
   { href: '/settings', icon: Settings, label: 'settings' },
 ] as const;
 
+const rmfNavItems = [
+  { href: '/rate-my-faculty', label: 'Feed' },
+  { href: '/rate-my-faculty/today', label: 'Today' },
+  { href: '/rate-my-faculty/rooms', label: 'Rooms' },
+  { href: 'https://rate-my-facult.me', label: 'RateMyFaculty', external: true },
+] as const;
+
 const NAV_INSET_PX = 5;
 
 interface NavbarProps {
@@ -143,25 +150,37 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
   const { themeConfig } = useTheme();
   const [mounted, setMounted] = useState(false);
   const resolvedPath = activePath ?? (pathname.startsWith('/settings') ? '/settings' : pathname);
-  const activeIndex = Math.max(0, navItems.findIndex((item) => item.href === resolvedPath));
-  const indicatorLeft = `calc(${NAV_INSET_PX}px + ${activeIndex} * ((100% - ${NAV_INSET_PX * 2}px) / ${navItems.length}))`;
-  const indicatorWidth = `calc((100% - ${NAV_INSET_PX * 2}px) / ${navItems.length})`;
-
-  // RMF Specific Navigation Setup
-  // RMF Specific Navigation Setup
+  
+  // Navigation State Logic
   const _isRmfRoute = pathname.startsWith('/rate-my-faculty');
   const [optimisticRmfRoute, setOptimisticRmfRoute] = useState(_isRmfRoute);
+  
+  const isRmfRoute = optimisticRmfRoute;
+  const currentNavItems = isRmfRoute ? rmfNavItems : navItems;
+  const currentActiveIndex = isRmfRoute 
+    ? Math.max(0, rmfNavItems.findIndex((item) => item.href === pathname))
+    : Math.max(0, navItems.findIndex((item) => item.href === resolvedPath));
+  
+  const currentIndicatorLeft = `calc(${NAV_INSET_PX}px + ${currentActiveIndex} * ((100% - ${NAV_INSET_PX * 2}px) / ${currentNavItems.length}))`;
+  const currentIndicatorWidth = `calc((100% - ${NAV_INSET_PX * 2}px) / ${currentNavItems.length})`;
 
   useEffect(() => {
     setOptimisticRmfRoute(_isRmfRoute);
   }, [_isRmfRoute]);
 
   useEffect(() => {
+    const handleToggle = (e: any) => {
+      setOptimisticRmfRoute(e.detail.isRmf);
+    };
+    window.addEventListener('rmf-nav-toggle', handleToggle as EventListener);
+    return () => window.removeEventListener('rmf-nav-toggle', handleToggle as EventListener);
+  }, []);
+
+  useEffect(() => {
     // Proactively prefetch the opposite route so transitions resolve immediately
     router.prefetch(optimisticRmfRoute ? '/' : '/rate-my-faculty');
   }, [optimisticRmfRoute, router]);
 
-  const isRmfRoute = optimisticRmfRoute;
   // Instead of an early return, we will conditionally render the contents inside the main flex row
   // so the layout (left pill + right circle side-by-side) remains intact across the entire app.
 
@@ -191,69 +210,22 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
       </AnimatePresence>
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex items-end justify-center px-4 sm:px-6 xl:px-8 mx-auto gap-4 sm:gap-6"
+        className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex items-end justify-center px-4 sm:px-6 xl:px-8 mx-auto gap-4 sm:gap-4"
         style={{
           paddingBottom: `calc(16px + max(env(safe-area-inset-bottom), 0px))`,
         }}
       >
         {/* LEFT: FLOATING NAVBAR */}
       <AnimatePresence mode="wait">
-        <motion.nav
-          key={isRmfRoute ? 'rmf-nav' : 'main-nav'}
-          initial={{ y: 60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 60, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 260, damping: 25, delay: 0.1 }}
-          className={`liquid-nav pointer-events-auto relative ${isRmfRoute ? 'w-auto' : 'w-[85%] max-w-[28rem] sm:max-w-[32rem]'}`}
-          aria-label={isRmfRoute ? 'RMF Navigation' : 'Primary'}
-        >
-          {isRmfRoute ? (
-            <div className="bg-[var(--surface-elevated)]/80 backdrop-blur-3xl border border-white/10 p-1 rounded-full shadow-2xl flex items-center gap-0.5 sm:gap-1">
-              {[
-                { name: 'Feed', href: '/rate-my-faculty' },
-                { name: 'Today', href: '/rate-my-faculty/today' },
-                { name: 'Rooms', href: '/rate-my-faculty/rooms' },
-                { name: 'RateMyFaculty', href: 'https://rate-my-facult.me', external: true },
-              ].map((tab) => {
-                const active = pathname === tab.href;
-                return (
-                  <button
-                    key={tab.name}
-                    onClick={() => {
-                      window.scrollTo({ top: 0, behavior: 'instant' });
-                      if ('external' in tab && tab.external) {
-                        window.open(tab.href, '_blank', 'noopener,noreferrer');
-                      } else {
-                        router.push(tab.href);
-                      }
-                    }}
-                    className={cn(
-                      "relative px-3 sm:px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-bold tracking-widest transition-all outline-none",
-                      active ? "text-[var(--text)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                    )}
-                  >
-                    {active && (
-                      <motion.div
-                        layoutId="rmfLeftNavActive"
-                        className="absolute inset-0 bg-[var(--surface-highlight)] shadow-sm rounded-full"
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center">
-                      {tab.name === 'RateMyFaculty' ? (
-                        <span className="font-serif italic font-black whitespace-nowrap">
-                          <span className="hidden sm:inline">Rate<span className="text-[#C19F62]">My</span>Faculty</span>
-                          <span className="sm:hidden">RMF</span>
-                        </span>
-                      ) : (
-                        tab.name
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
+          <motion.nav
+            key={isRmfRoute ? 'rmf-nav' : 'main-nav'}
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 25, delay: 0.1 }}
+            className="liquid-nav pointer-events-auto relative w-[85%] max-w-[28rem] sm:max-w-[32rem]"
+            aria-label={isRmfRoute ? 'RMF Navigation' : 'Primary'}
+          >
             <div
               className="relative overflow-hidden rounded-full border p-[5px] backdrop-blur-xl"
               style={{
@@ -271,24 +243,24 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
               
               <motion.div
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-[5px] top-[5px] flex items-center justify-center"
-                animate={{ left: indicatorLeft }}
+                className="pointer-events-none absolute bottom-[5px] top-[5px] flex items-center justify-center z-0"
+                animate={{ left: currentIndicatorLeft }}
                 initial={false}
                 transition={{
                   duration: 0.38,
                   ease: [0.22, 1, 0.36, 1],
                 }}
                 style={{
-                  width: indicatorWidth,
+                  width: currentIndicatorWidth,
                   willChange: 'left, transform',
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden',
                 }}
               >
                 <div
-                  className="relative h-10 w-10 overflow-hidden border backdrop-blur-md"
+                  className="relative h-10 w-full overflow-hidden border backdrop-blur-md"
                   style={{
-                    borderRadius: '50%',
+                    borderRadius: '999px',
                     borderColor: 'color-mix(in srgb, var(--primary) 36%, rgba(255,255,255,0.28))',
                     background: 'linear-gradient(180deg, color-mix(in srgb, rgba(255,255,255,0.26) 48%, var(--surface-highlight)) 0%, color-mix(in srgb, var(--primary) 10%, var(--surface-elevated) 90%) 100%)',
                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2), 0 0 16px color-mix(in srgb, var(--primary) 40%, transparent)',
@@ -305,23 +277,56 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                 </div>
               </motion.div>
 
-              <div className="relative grid grid-cols-6 items-center">
-                {navItems.map((item) => (
-                  <NavItemButton
-                    key={item.href}
-                    href={item.href}
-                    icon={item.icon}
-                    isActive={resolvedPath === item.href}
-                    label={item.label}
-                    motionPreset={themeConfig.motion}
-                    mounted={mounted}
-                    onNavigate={onNavigate}
-                  />
-                ))}
+              <div className={cn("relative z-10 grid items-center", isRmfRoute ? "grid-cols-4" : "grid-cols-6")}>
+                {isRmfRoute ? (
+                  rmfNavItems.map((tab) => {
+                    const active = pathname === tab.href;
+                    return (
+                      <button
+                        key={tab.label}
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: 'instant' });
+                          if ('external' in tab && tab.external) {
+                            window.open(tab.href, '_blank', 'noopener,noreferrer');
+                          } else {
+                            router.push(tab.href);
+                          }
+                        }}
+                        className={cn(
+                          "relative h-[3.4rem] w-full flex items-center justify-center rounded-full text-[10px] sm:text-xs font-bold tracking-[0.1em] transition-colors duration-300",
+                          active ? "text-[var(--text)]" : "text-on-surface-variant opacity-50 hover:opacity-80"
+                        )}
+                      >
+                        <span className="relative z-10 flex items-center uppercase font-black">
+                          {tab.label === 'RateMyFaculty' ? (
+                            <span className="font-serif italic whitespace-nowrap">
+                              <span className="hidden sm:inline">Rate<span className="text-[#C19F62]">My</span>Faculty</span>
+                              <span className="sm:hidden">RMF</span>
+                            </span>
+                          ) : (
+                            tab.label
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  navItems.map((item) => (
+                    <NavItemButton
+                      key={item.href}
+                      href={item.href}
+                      icon={item.icon}
+                      isActive={resolvedPath === item.href}
+                      label={item.label}
+                      motionPreset={themeConfig.motion}
+                      mounted={mounted}
+                      onNavigate={onNavigate}
+                    />
+                  ))
+                )}
               </div>
             </div>
-          )}
-        </motion.nav>
+          </motion.nav>
       </AnimatePresence>
 
       {/* RIGHT: FLOATING CTA BUTTON */}

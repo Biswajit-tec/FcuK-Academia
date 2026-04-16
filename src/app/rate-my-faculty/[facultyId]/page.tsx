@@ -39,7 +39,7 @@ function CountUp({ value, duration = 1.5 }: { value: number; duration?: number }
     let start = 0;
     const end = value;
     if (start === end) return;
-    
+
     let totalMilSecDur = duration * 1000;
     let incrementTime = (totalMilSecDur / end) * 0.1;
 
@@ -115,7 +115,7 @@ export default function FacultyDetailPage() {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error);
-      
+
       // Reload on success
       setIsModalOpen(false);
       window.location.reload();
@@ -176,7 +176,7 @@ export default function FacultyDetailPage() {
 
   return (
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)] overflow-x-hidden">
-      
+
       {/* Global Background Fix */}
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div className="absolute inset-0 bg-[var(--background)]" />
@@ -186,13 +186,13 @@ export default function FacultyDetailPage() {
       </div>
 
       {/* Header Back Button - Seamless Integration */}
-      <motion.div 
+      <motion.div
         initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         className="sticky top-0 z-40 px-4 sm:px-6 py-4 flex items-center justify-between pointer-events-none"
       >
         <div className="pointer-events-auto flex items-center gap-4">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="flex justify-center items-center p-2 rounded-full hover:bg-white/10 transition-colors bg-white/5 backdrop-blur-md border border-white/5 shadow-lg"
           >
             <ArrowLeft size={18} className="text-[var(--text)]" />
@@ -209,9 +209,9 @@ export default function FacultyDetailPage() {
       </motion.div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
-        
+
         {/* Profile Card (Stronger glassmorphism depth, glow edge) */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           className="relative bg-[var(--surface)]/60 border border-white/10 rounded-[2rem] p-6 sm:p-8 mb-8 overflow-hidden shadow-xl backdrop-blur-2xl ring-1 ring-white/5"
         >
@@ -232,7 +232,7 @@ export default function FacultyDetailPage() {
                 )}
               </div>
             </div>
-            
+
             {/* Minimal Badge for Rate */}
             <div className="flex items-center justify-center gap-3 bg-[var(--surface-highlight)]/40 border border-white/10 px-6 py-4 rounded-[2rem] flex-shrink-0 shadow-lg backdrop-blur-md">
               <div className="flex flex-col items-center">
@@ -251,13 +251,13 @@ export default function FacultyDetailPage() {
         </motion.div>
 
         {/* Breakdown Stats */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
           className="grid gap-x-10 sm:grid-cols-2 bg-[var(--surface)]/30 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-white/5 mb-10 shadow-lg relative overflow-hidden"
         >
           {/* Subtle decoration inside stats */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-[var(--primary)]/30 to-transparent" />
-          
+
           <div className="col-span-full mb-8">
             <h3 className="text-xl font-black font-[var(--font-headline)] flex items-center gap-2">
               <Star size={20} className="text-[var(--primary)] fill-[var(--primary)] drop-shadow-[0_0_8px_var(--primary)]" />
@@ -277,7 +277,7 @@ export default function FacultyDetailPage() {
         </motion.div>
 
         {/* CTA Button */}
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
           className="flex justify-center mb-16"
         >
@@ -295,15 +295,15 @@ export default function FacultyDetailPage() {
         </motion.div>
 
         {/* Student Receipts */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
         >
           <h3 className="text-2xl font-black font-[var(--font-headline)] mb-6 tracking-tight flex items-center gap-2">
-            student receipts 🧾
+            student reviews
           </h3>
           <div className="space-y-4">
             {reviews.length === 0 ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="p-10 text-center bg-[var(--surface)]/30 backdrop-blur-md rounded-3xl border border-white/10 border-dashed"
               >
@@ -311,13 +311,13 @@ export default function FacultyDetailPage() {
               </motion.div>
             ) : (
               reviews.map((rev, i) => (
-                <motion.div 
+                <motion.div
                   key={rev.id}
                   initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i < 10 ? i * 0.1 : 0 }}
                   className="p-6 bg-[var(--surface)]/40 backdrop-blur-xl rounded-[1.5rem] border border-white/5 shadow-md relative group hover:bg-[var(--surface-elevated)]/60 transition-colors"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-[1.5rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                  
+
                   <div className="flex justify-between items-start mb-4 relative z-10">
                     <span className="font-bold text-xs bg-[var(--surface-highlight)]/40 px-3 py-1.5 rounded-full text-[var(--text)] tracking-widest uppercase shadow-sm">
                       Anonymous
@@ -340,17 +340,17 @@ export default function FacultyDetailPage() {
           {isModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               {/* Strong glass blur background */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 onClick={() => !submitting && setIsModalOpen(false)}
                 className="absolute inset-0 bg-black/60 backdrop-blur-xl"
               />
-              
+
               {/* Smooth spring animated modal body */}
-              <motion.div 
-                initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-                animate={{ scale: 1, opacity: 1, y: 0 }} 
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 className="relative bg-[var(--surface-elevated)] border border-white/10 rounded-[2rem] p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col gap-6 ring-1 ring-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10"
@@ -359,7 +359,7 @@ export default function FacultyDetailPage() {
                   <h3 className="text-2xl font-black font-[var(--font-headline)]">Expose honestly 🤫</h3>
                   <button onClick={() => !submitting && setIsModalOpen(false)} className="w-10 h-10 flex justify-center items-center rounded-full bg-white/5 hover:bg-white/10 font-bold text-lg transition-colors">&times;</button>
                 </div>
-                
+
                 {submitError && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 text-sm font-semibold">
                     {submitError}
@@ -379,15 +379,15 @@ export default function FacultyDetailPage() {
                         {/* Custom Slider with glowing thumb & track fill */}
                         <div className="relative w-full h-2 bg-white/10 rounded-full">
                           <div className="absolute left-0 top-0 bottom-0 bg-[var(--primary)] rounded-full transition-all duration-200" style={{ width: `${percentage}%` }} />
-                          <input 
-                            type="range" min="1" max="5" step="1" 
+                          <input
+                            type="range" min="1" max="5" step="1"
                             value={val}
                             disabled={submitting}
                             onChange={(e) => setFormParams({ ...formParams, [param]: parseInt(e.target.value) })}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                           />
                           {/* Glowing thumb visuals */}
-                          <div 
+                          <div
                             className="absolute top-1/2 -mt-2.5 -ml-2.5 w-5 h-5 bg-white rounded-full shadow-[0_0_15px_var(--primary)] pointer-events-none transition-all duration-200 z-10"
                             style={{ left: `${percentage}%` }}
                           />
@@ -395,10 +395,10 @@ export default function FacultyDetailPage() {
                       </div>
                     )
                   })}
-                  
+
                   <div className="pt-4">
                     <label className="block text-xs font-bold uppercase tracking-widest mb-3 text-on-surface-variant">Spill the tea (Review)</label>
-                    <textarea 
+                    <textarea
                       rows={4}
                       placeholder="e.g. strict grading but teaches well..."
                       value={formParams.review}
@@ -409,7 +409,7 @@ export default function FacultyDetailPage() {
                   </div>
                 </div>
 
-                <motion.button 
+                <motion.button
                   whileTap={!submitting ? { scale: 0.95 } : {}}
                   onClick={submitReview}
                   disabled={submitting}
