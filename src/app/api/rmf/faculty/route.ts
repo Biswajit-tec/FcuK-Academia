@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { syncUserToDb } from '@/lib/server/user-sync';
 
 export async function GET() {
   try {
+    // Sync user data to DB for analytics (async background sync)
+    void syncUserToDb();
+
     let srmCollege = await prisma.college.findFirst({
       where: {
         name: {
@@ -97,6 +101,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Sync user data to DB before creating faculty
+    await syncUserToDb();
+
     const { name, designation, department } = await request.json();
 
     if (!name) {
