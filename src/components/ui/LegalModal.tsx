@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -16,17 +16,14 @@ interface LegalModalProps {
 /**
  * Reusable legal document modal.
  *
- * Matches the exact PrivacyModal card design from settings/page.tsx:
- * - Same bottom-sheet animation (y: 100% → 0, spring)
- * - Same overlay (bg-black/70 + backdrop-blur-md)
- * - Same card border radius, padding, scroll behaviour
- * - Same close button
- *
- * Content rendering:
- * - Lines matching headings (e.g. "1. INTRODUCTION", "FINAL STATEMENT",
- *   "## Some Header") → rendered bold / semi-bold
- * - All other lines → normal text
- * - Blank lines → preserved as spacing
+ * Animation fix notes:
+ * - Scroll unlock fires in onExitComplete, NOT in the useEffect cleanup.
+ *   Restoring overflow immediately when open=false causes a scrollbar to appear
+ *   mid-animation, shifting page content horizontally — the classic close jitter.
+ * - Exit uses a tween (not spring) so the duration is predictable and the overlay
+ *   + card finish at exactly the same time.
+ * - will-change: transform on the card panel enables GPU compositing so the browser
+ *   doesn't layout-thrash during the slide out.
  */
 export default function LegalModal({
   open,
@@ -35,21 +32,33 @@ export default function LegalModal({
   kicker = 'legal',
   content,
 }: LegalModalProps) {
+  // Persist the pre-lock values so we restore to exactly what was there.
+  const savedOverflow = useRef('');
+  const savedTouchAction = useRef('');
+
   useEffect(() => {
     if (!open) return;
 
-    const previousOverflow = document.body.style.overflow;
-    const previousTouchAction = document.body.style.touchAction;
+    // Lock body scroll when the modal opens.
+    savedOverflow.current = document.body.style.overflow;
+    savedTouchAction.current = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
 
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.touchAction = previousTouchAction;
-    };
+    // ⚠️ DO NOT restore in this cleanup.
+    // Restoring here fires the instant open=false, before the exit animation
+    // starts — which causes the page scrollbar to reappear mid-animation,
+    // horizontally shifting all content. That's the jitter.
+    // Restoration happens in handleExitComplete below instead.
   }, [open]);
 
-  // Close on Escape key
+  // AnimatePresence calls this only after the exit animation fully completes.
+  const handleExitComplete = useCallback(() => {
+    document.body.style.overflow = savedOverflow.current;
+    document.body.style.touchAction = savedTouchAction.current;
+  }, []);
+
+  // Escape key to close.
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -62,19 +71,20 @@ export default function LegalModal({
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={handleExitComplete}>
       {open ? (
+        // Overlay — fades in/out in sync with the card slide.
         <motion.div
           className="fixed inset-0 z-[999] flex min-h-screen w-full items-end justify-center overflow-hidden bg-black/70 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
           onClick={(e) => {
-            // Close on overlay click
             if (e.target === e.currentTarget) onClose();
           }}
         >
+          {/* Card panel */}
           <motion.div
             className="relative flex h-[100dvh] w-full max-w-[28rem] flex-col overflow-hidden border px-4 pb-6 pt-5 sm:max-w-[34rem] sm:px-6 lg:max-w-[44rem] xl:max-w-[52rem]"
             style={{
@@ -82,11 +92,22 @@ export default function LegalModal({
                 'linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, black 4%) 0%, color-mix(in srgb, var(--surface-soft) 94%, transparent) 100%)',
               borderColor: 'var(--border-strong)',
               boxShadow: '0 28px 80px rgba(0,0,0,0.45)',
+              // GPU layer: prevents layout thrash during the transform animation.
+              willChange: 'transform, opacity',
             }}
-            initial={{ y: '100%', opacity: 0.9 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0.9 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+            initial={{ y: '100%', opacity: 0.92 }}
+            animate={{
+              y: 0,
+              opacity: 1,
+              transition: { type: 'spring', stiffness: 300, damping: 30 },
+            }}
+            exit={{
+              y: '100%',
+              opacity: 0.92,
+              // Tween on exit = fixed, predictable 200ms.
+              // Spring exit has a long tail that causes a perceived drag/jitter.
+              transition: { type: 'tween', duration: 0.2, ease: [0.4, 0, 1, 1] },
+            }}
           >
             {/* Hero gradient accent */}
             <div
@@ -134,6 +155,10 @@ export default function LegalModal({
     document.body,
   );
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* Content renderer                                                            */
+/* ─────────────────────────────────────────────────────────────────────────── */
 
 /**
  * Renders legal content string preserving line structure.
@@ -294,7 +319,6 @@ function LegalContentRenderer({ content }: { content: string }) {
  * Returns an array of React nodes.
  */
 function renderInline(text: string): React.ReactNode {
-  // Split on **bold** and [label](url)
   const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
 
   return parts.map((part, i) => {
