@@ -5,6 +5,9 @@ import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import SubjectList from './SubjectList';
 import SubjectLoading from './loading';
+import AppHeader from '@/components/layout/AppHeader';
+import AppSwitcher from '@/components/ui/AppSwitcher';
+import { PageReveal } from '@/components/ui/PageReveal';
 
 interface Props {
   params: Promise<{ semester: string }>;
@@ -47,25 +50,31 @@ export default async function SemesterPage({ params }: Props) {
 
   if (isNaN(semNum) || semNum < 1 || semNum > 8) {
     return (
-      <div className="flex flex-col items-center justify-center pt-20 text-center">
-        <p className="font-headline text-2xl text-on-surface-variant">semester not found 🫠</p>
-        <Link href="/pyqs" className="mt-4 theme-kicker underline">
+      <PageReveal className="flex flex-col gap-6 pb-40 pt-1">
+        <div className="flex flex-col gap-4">
+          <AppHeader 
+            title={<span className="font-headline text-xl font-bold tracking-tight text-primary italic">Semester {semNum}</span>} 
+            backHref="/pyqs" 
+          />
+          <AppSwitcher />
+        </div>
+        <p className="font-headline text-2xl text-on-surface-variant text-center mt-10">semester not found 🫠</p>
+        <Link href="/pyqs" className="mt-4 theme-kicker underline text-center">
           go back
         </Link>
-      </div>
+      </PageReveal>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-40 pt-4">
-      {/* Back button */}
-      <Link
-        href="/pyqs"
-        className="inline-flex w-fit items-center gap-2 theme-outline-button px-4 py-2 text-sm font-semibold"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        semesters
-      </Link>
+    <PageReveal className="flex flex-col gap-6 pb-40 pt-1">
+      <div className="flex flex-col gap-4">
+        <AppHeader 
+          title={<span className="font-headline text-xl font-bold tracking-tight text-primary italic">Semester {semNum}</span>} 
+          backHref="/pyqs" 
+        />
+        <AppSwitcher />
+      </div>
 
       {/* Header */}
       <section className="space-y-2">
@@ -95,6 +104,6 @@ export default async function SemesterPage({ params }: Props) {
       <Suspense fallback={<SubjectLoading />}>
         <SubjectContent semester={semNum} />
       </Suspense>
-    </div>
+    </PageReveal>
   );
 }

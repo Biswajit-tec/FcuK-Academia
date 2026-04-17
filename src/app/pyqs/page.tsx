@@ -4,6 +4,9 @@ import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import SemesterGrid from './SemesterGrid';
 import PYQLoading from './loading';
+import AppSwitcher from '@/components/ui/AppSwitcher';
+import AppHeader from '@/components/layout/AppHeader';
+import { PageReveal } from '@/components/ui/PageReveal';
 
 export const metadata: Metadata = {
   title: 'PYQs — FcuK Academia',
@@ -37,9 +40,16 @@ async function SemesterContent() {
 
 export default function PYQPage() {
   return (
-    <div className="flex flex-col gap-8 pb-40 pt-4">
+    <PageReveal className="flex flex-col gap-8 pb-32 pt-1">
+      <div className="flex flex-col gap-4">
+        <AppHeader 
+          title={<span className="font-headline text-xl font-bold tracking-tight text-primary italic">SRM PYQs</span>} 
+          backHref="/" 
+        />
+        <AppSwitcher />
+      </div>
       {/* Header */}
-      <section className="mt-1 space-y-2">
+      <section className="-mt-3 space-y-2">
         <p className="theme-kicker">last night saviour papers 💀</p>
         <h1
           className="font-headline text-[3.15rem] font-bold leading-[0.88] tracking-tight"
@@ -66,6 +76,6 @@ export default function PYQPage() {
       <Suspense fallback={<PYQLoading />}>
         <SemesterContent />
       </Suspense>
-    </div>
+    </PageReveal>
   );
 }

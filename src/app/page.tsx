@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { AlertTriangle, FileStack } from 'lucide-react';
 
 import AppHeader from '@/components/layout/AppHeader';
+import AppSwitcher from '@/components/ui/AppSwitcher';
 import HomeFooter from '@/components/layout/HomeFooter';
 import DayOrderPills from '@/components/ui/DayOrderPills';
 import CountUp from '@/components/ui/CountUp';
@@ -186,10 +187,13 @@ export default function HomePage() {
   };
 
   return (
-    <PageReveal className="flex flex-col gap-8 pb-40 pt-4">
-      <AppHeader />
+    <PageReveal className="flex flex-col gap-8 pb-40 pt-1">
+      <div className="flex flex-col gap-4">
+        <AppHeader />
+        <AppSwitcher />
+      </div>
 
-      <section className="mt-1 space-y-2">
+      <section className="-mt-3 space-y-2">
         <RevealText>
           <p className="theme-kicker">{user?.department || 'ready for the grind?'}</p>
         </RevealText>

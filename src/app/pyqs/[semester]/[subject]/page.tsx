@@ -5,6 +5,8 @@ import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import PYQList from './PYQList';
 import PYQListLoading from './loading';
+import AppHeader from '@/components/layout/AppHeader';
+import { PageReveal } from '@/components/ui/PageReveal';
 
 interface Props {
   params: Promise<{ semester: string; subject: string }>;
@@ -48,6 +50,8 @@ async function PYQContent({ semester, subject }: { semester: number; subject: st
   return <PYQList pyqs={pyqs} subject={subject} semester={semester} />;
 }
 
+import AppSwitcher from '@/components/ui/AppSwitcher';
+
 export default async function PYQSubjectPage({ params }: Props) {
   const { semester, subject } = await params;
   const semNum = parseInt(semester, 10);
@@ -55,25 +59,24 @@ export default async function PYQSubjectPage({ params }: Props) {
 
   if (isNaN(semNum)) {
     return (
-      <div className="flex flex-col items-center justify-center pt-20">
-        <p className="font-headline text-2xl text-on-surface-variant">invalid page 🫠</p>
-        <Link href="/pyqs" className="mt-4 theme-kicker underline">
+      <PageReveal className="flex flex-col items-center justify-center pt-24 pb-40">
+        <p className="font-headline text-2xl text-on-surface-variant text-center">invalid page 🫠</p>
+        <Link href="/pyqs" className="mt-4 theme-kicker underline text-center">
           start over
         </Link>
-      </div>
+      </PageReveal>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-40 pt-4">
-      {/* Back nav */}
-      <Link
-        href={`/pyqs/${semNum}`}
-        className="inline-flex w-fit items-center gap-2 theme-outline-button px-4 py-2 text-sm font-semibold"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        subjects
-      </Link>
+    <PageReveal className="flex flex-col gap-6 pb-40 pt-1">
+      <div className="flex flex-col gap-4">
+        <AppHeader 
+          title={<span className="font-headline text-xl font-bold tracking-tight text-primary italic">{decodedSubject}</span>} 
+          backHref={`/pyqs/${semNum}`} 
+        />
+        <AppSwitcher />
+      </div>
 
       {/* Header */}
       <section className="space-y-2">
@@ -118,6 +121,6 @@ export default async function PYQSubjectPage({ params }: Props) {
       <Suspense fallback={<PYQListLoading />}>
         <PYQContent semester={semNum} subject={decodedSubject} />
       </Suspense>
-    </div>
+    </PageReveal>
   );
 }
