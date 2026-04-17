@@ -551,15 +551,17 @@
 }
 
 .rmf-bg-bloom-top {
-  background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
+  background-color: var(--primary);
   opacity: 0.12;
-  transform: translate3d(0, 0, 0);
+  filter: blur(120px);
+  transform: translateZ(0);
   will-change: transform;
 }
 
 .rmf-bg-bloom-bottom {
-  background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
+  background-color: var(--primary);
   opacity: 0.08;
-  transform: translate3d(0, 0, 0);
+  filter: blur(100px);
+  transform: translateZ(0);
   will-change: transform;
 }
