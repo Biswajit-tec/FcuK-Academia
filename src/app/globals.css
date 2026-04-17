@@ -546,26 +546,20 @@
 
 /* RMF Section Background */
 .rmf-bg-base {
-  background: var(--background);
-  background: radial-gradient(
-    circle at 50% -20%,
-    color-mix(in srgb, var(--primary) 8%, var(--background)),
-    var(--background) 70%
-  );
+  background-color: var(--background);
+  isolation: isolate;
 }
 
 .rmf-bg-bloom-top {
-  background-color: var(--primary);
+  background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
   opacity: 0.12;
-  filter: blur(120px);
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
   will-change: transform;
 }
 
 .rmf-bg-bloom-bottom {
-  background-color: var(--primary);
+  background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
   opacity: 0.08;
-  filter: blur(100px);
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
   will-change: transform;
 }
