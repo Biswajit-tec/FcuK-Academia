@@ -5,12 +5,12 @@ const noiseSvg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='ht
 export default function FacultyListLoading() {
   return (
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)]">
-      {/* Global Background Fix */}
+      {/* Global Background Fix - matches FacultyListClient exactly */}
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div className="absolute inset-0 bg-[var(--background)]" />
-        <div className="absolute top-[-10%] right-[-10%] w-[70%] h-[70%] rounded-full opacity-[0.03] blur-[130px] bg-[var(--primary)] pointer-events-none" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full opacity-[0.02] blur-[120px] bg-[var(--primary)] pointer-events-none" />
-        <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: noiseSvg }}></div>
+        <div className="absolute inset-0 rmf-bg-base" />
+        <div className="absolute top-0 right-0 w-[80%] h-[80%] rounded-full rmf-bg-bloom-top" />
+        <div className="absolute bottom-0 left-0 w-[70%] h-[70%] rounded-full rmf-bg-bloom-bottom" />
+        <div className="absolute inset-0 opacity-[0.05] mix-blend-overlay" style={{ backgroundImage: noiseSvg }}></div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 mt-4">
