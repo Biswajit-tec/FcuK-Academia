@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getRmfFaculties } from '@/lib/server/rmf';
 import { syncUserToDb } from '@/lib/server/user-sync';
@@ -46,6 +47,9 @@ export async function POST(request: Request) {
         collegeId: srmCollege.id,
       },
     });
+
+    // Revalidate the faculty list cache
+    revalidateTag('rmf-faculties', 'default');
 
     return NextResponse.json(faculty);
   } catch (error: unknown) {

@@ -3,8 +3,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2, ArrowLeft, Star } from 'lucide-react';
+import { Search, Loader2, ArrowLeft, Star, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const AddFacultyForm = dynamic(() => import('./AddFacultyForm'), {
+  ssr: false,
+  loading: () => <Loader2 className="animate-spin text-[var(--primary)]" />
+});
 
 interface FacultyStats {
   teachingClarity: number;
@@ -79,22 +85,17 @@ export default function FacultyListClient({
   const [sortBy, setSortBy] = useState<SortType>('RATING');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Add Faculty Form State
   const [showAddForm, setShowAddForm] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [addError, setAddError] = useState('');
-  const [newFaculty, setNewFaculty] = useState({
-    name: '',
-    designation: '',
-    department: '',
-  });
 
   React.useEffect(() => {
     router.prefetch('/');
   }, [router]);
 
   useEffect(() => {
+    setMounted(true);
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
     }, 150);
@@ -112,30 +113,8 @@ export default function FacultyListClient({
       .catch((err) => setError(err.message));
   };
 
-  const handleAddFaculty = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFaculty.name.trim()) return;
-
-    setIsCreating(true);
-    setAddError('');
-
-    try {
-      const res = await fetch('/api/rmf/faculty', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newFaculty),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      setNewFaculty({ name: '', designation: '', department: '' });
-      setShowAddForm(false);
-      fetchFaculties();
-    } catch (err: any) {
-      setAddError(err.message);
-    } finally {
-      setIsCreating(false);
-    }
+  const handleAddSuccess = () => {
+    router.refresh();
   };
 
   const processedFaculties = useMemo(() => {
@@ -251,78 +230,10 @@ export default function FacultyListClient({
 
         <AnimatePresence>
           {showAddForm && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden mb-8"
-            >
-              <div className="bg-[var(--surface-elevated)]/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative">
-                <div className="absolute top-4 right-4">
-                  <button
-                    onClick={() => setShowAddForm(false)}
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
-                  >
-                    &times;
-                  </button>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="text-xl font-black font-[var(--font-headline)] uppercase tracking-tight">Add a Faculty Member</h3>
-                  <p className="text-xs text-on-surface-variant font-medium mt-1">Adding to SRMIST Kattankulathur. Please be accurate.</p>
-                </div>
-
-                {addError && (
-                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-semibold">
-                    {addError}
-                  </div>
-                )}
-
-                <form onSubmit={handleAddFaculty} className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Full Name *</label>
-                    <input
-                      type="text" required
-                      placeholder="Dr. John Smith"
-                      value={newFaculty.name}
-                      onChange={(e) => setNewFaculty({ ...newFaculty, name: e.target.value })}
-                      className="w-full bg-[var(--surface-highlight)]/20 border border-white/10 rounded-2xl p-4 text-sm focus:border-[var(--primary)] focus:ring-1 ring-[var(--primary)]/50 outline-none transition-all text-[var(--text)] font-medium placeholder:text-on-surface-variant/40"
-                    />
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Designation</label>
-                      <input
-                        type="text"
-                        placeholder="Associate Professor"
-                        value={newFaculty.designation}
-                        onChange={(e) => setNewFaculty({ ...newFaculty, designation: e.target.value })}
-                        className="w-full bg-[var(--surface-highlight)]/20 border border-white/10 rounded-2xl p-4 text-sm focus:border-[var(--primary)] focus:ring-1 ring-[var(--primary)]/50 outline-none transition-all text-[var(--text)] font-medium placeholder:text-on-surface-variant/40"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Department</label>
-                      <input
-                        type="text"
-                        placeholder="Computer Science"
-                        value={newFaculty.department}
-                        onChange={(e) => setNewFaculty({ ...newFaculty, department: e.target.value })}
-                        className="w-full bg-[var(--surface-highlight)]/20 border border-white/10 rounded-2xl p-4 text-sm focus:border-[var(--primary)] focus:ring-1 ring-[var(--primary)]/50 outline-none transition-all text-[var(--text)] font-medium placeholder:text-on-surface-variant/40"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isCreating}
-                    className="w-full py-4 rounded-2xl bg-[var(--primary)] text-[#1a1a1a] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all shadow-[0_0_20px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
-                  >
-                    {isCreating ? <Loader2 className="animate-spin" size={20} /> : 'ADD FACULTY MEMBER'}
-                  </button>
-                </form>
-              </div>
-            </motion.div>
+            <AddFacultyForm 
+              onSuccess={handleAddSuccess}
+              onClose={() => setShowAddForm(false)}
+            />
           )}
         </AnimatePresence>
 
@@ -370,16 +281,25 @@ export default function FacultyListClient({
         ) : (
           <div className="flex flex-col gap-4">
             <AnimatePresence mode="popLayout">
-              {processedFaculties.map((faculty, i) => (
-                <motion.div
-                  layout
-                  key={faculty.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3, delay: i < 15 ? i * 0.05 : 0 }}
-                >
-                  <Link href={`/rate-my-faculty/${faculty.id}`}>
+              {processedFaculties.map((faculty, i) => {
+                const shouldAnimate = mounted && i < 15;
+                return (
+                  <motion.div
+                    layout={mounted}
+                    key={faculty.id}
+                    initial={shouldAnimate ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ 
+                      duration: 0.25, 
+                      delay: shouldAnimate ? i * 0.04 : 0,
+                      ease: "easeOut"
+                    }}
+                  >
+                  <Link 
+                    href={`/rate-my-faculty/${faculty.id}`}
+                    onMouseEnter={() => router.prefetch(`/rate-my-faculty/${faculty.id}`)}
+                  >
                     <motion.div
                       whileHover={{ scale: 0.98 }}
                       whileTap={{ scale: 0.96 }}
@@ -422,10 +342,11 @@ export default function FacultyListClient({
                     </motion.div>
                   </Link>
                 </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
       </div>
     </div>
   );

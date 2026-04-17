@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import crypto from 'node:crypto';
 import prisma from '@/lib/prisma';
 import { getUserSession } from '@/lib/server/session';
@@ -58,6 +59,11 @@ export async function POST(request: Request) {
         ratingHash,
       },
     });
+
+    // Revalidate caches
+    revalidateTag('rmf-faculties', 'default');
+    revalidateTag(`faculty-${facultyId}`, 'default');
+    revalidateTag('rmf-today', 'default');
 
     return NextResponse.json({ success: true, rating: result });
   } catch (error: any) {

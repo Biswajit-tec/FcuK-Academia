@@ -54,6 +54,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     SWIPEABLE_PATHS.forEach((path) => {
       router.prefetch(path);
     });
+
+    // Proactive Cache Warming for RMF
+    // This hits the API in the background to ensure the server-side cache is ready.
+    const warmRmfCache = async () => {
+      try {
+        // Targeted prefetch and background fetch
+        router.prefetch('/rate-my-faculty');
+        await fetch('/api/rmf/faculty', { priority: 'low' } as any);
+      } catch (e) {
+        // Silently fail, it's just a warming request
+      }
+    };
+    
+    // Slight delay to prioritize main content loading
+    const timer = setTimeout(warmRmfCache, 1500);
+    return () => clearTimeout(timer);
   }, [router]);
 
   useEffect(() => {

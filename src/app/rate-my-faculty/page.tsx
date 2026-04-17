@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { getRmfFaculties } from '@/lib/server/rmf';
 import FacultyListClient from './FacultyListClient';
+import FacultyListLoading from './loading';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function RateMyFacultyPage() {
+async function FacultyList() {
   const data = await getRmfFaculties();
-  
   return (
     <FacultyListClient 
       initialFaculties={data.faculties || []} 
-      college={data.college || null} 
+      college={'college' in data ? data.college : null} 
     />
+  );
+}
+
+export default function RateMyFacultyPage() {
+  return (
+    <Suspense fallback={<FacultyListLoading />}>
+      <FacultyList />
+    </Suspense>
   );
 }

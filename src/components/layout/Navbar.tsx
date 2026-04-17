@@ -186,7 +186,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
-
+  
   return (
     <>
       <div
@@ -379,6 +379,9 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                         alt="FcuK Academia" 
                         className="w-full h-full object-contain"
                         style={{
+                          transform: 'translateZ(0)',
+                          willChange: 'transform, opacity',
+                          backfaceVisibility: 'hidden',
                           filter: themeConfig.mode === 'light' 
                             ? 'brightness(0) opacity(0.85)' 
                             : 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))'
@@ -404,6 +407,9 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                         alt="RMF" 
                         className="w-full h-full object-contain"
                         style={{
+                          transform: 'translateZ(0)',
+                          willChange: 'transform, opacity',
+                          backfaceVisibility: 'hidden',
                           filter: themeConfig.mode === 'light' 
                             ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))' 
                             : 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))'

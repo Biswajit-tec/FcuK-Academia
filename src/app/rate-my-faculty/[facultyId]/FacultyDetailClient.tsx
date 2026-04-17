@@ -1,10 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useOptimistic, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ArrowLeft, Loader2, MessageSquare, Send } from 'lucide-react';
+import { Star, ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const ReviewModal = dynamic(() => import('./ReviewModal'), { 
+  ssr: false,
+  loading: () => <Loader2 className="animate-spin text-[var(--primary)]" />
+});
 
 interface Review {
   id: string;
@@ -67,55 +73,34 @@ const getMoodEmoji = (rating: number) => {
 };
 
 export default function FacultyDetailClient({ 
-  faculty, 
-  reviews 
+  faculty: initialFaculty, 
+  reviews: initialReviews 
 }: { 
   faculty: FacultyDetail; 
   reviews: Review[] 
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  // Optimistic UI for reviews
+  const [optimisticReviews, addOptimisticReview] = useOptimistic(
+    initialReviews,
+    (state: Review[], newReview: Review) => [newReview, ...state]
+  );
 
   React.useEffect(() => {
+    // Targeted prefetch for "Return to Feed"
     router.prefetch('/rate-my-faculty');
   }, [router]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
   const [formParams, setFormParams] = useState({
-    teachingClarity: 3,
-    approachability: 3,
-    gradingFairness: 3,
-    punctuality: 3,
-    partiality: 3,
-    behaviour: 3,
     review: '',
   });
 
-  const submitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitError('');
-
-    try {
-      const res = await fetch('/api/rmf/rating', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          facultyId: faculty.id,
-          ...formParams,
-        }),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error);
-
-      setIsModalOpen(false);
-      window.location.reload();
-    } catch (err: any) {
-      setSubmitError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  const handleReviewSuccess = () => {
+    // router.refresh() will update the server component's "initialReviews" 
+    router.refresh();
   };
 
   const MetricBar = ({ label, value }: { label: string; value: number | null }) => {
@@ -133,10 +118,14 @@ export default function FacultyDetailClient({
         </div>
         <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden backdrop-blur-md border border-white/5 relative">
           <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${percentage}%` }}
+            initial={{ scaleX: 0, originX: 0 }}
+            animate={{ scaleX: percentage / 100 }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-            className="h-full rounded-full bg-gradient-to-r from-[var(--primary)]/30 to-[var(--primary)] shadow-sm relative overflow-hidden"
+            className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/30 to-[var(--primary)] shadow-sm overflow-hidden"
+            style={{ 
+              WebkitBackfaceVisibility: 'hidden',
+              translateZ: 0 
+            }}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-50" />
           </motion.div>
@@ -187,15 +176,15 @@ export default function FacultyDetailClient({
           <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6 md:items-center">
             <div className="flex-1 min-w-0 pr-4">
               <h1 className="text-3xl sm:text-5xl font-black font-[var(--font-headline)] tracking-tighter mb-2 text-[var(--text)] drop-shadow-sm capitalize">
-                {faculty.name}
+                {initialFaculty.name}
               </h1>
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="inline-block bg-[var(--primary)]/10 border border-[var(--primary)]/20 px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase text-[var(--primary)]">
-                  {faculty.designation || 'Faculty'}
+                  {initialFaculty.designation || 'Faculty'}
                 </p>
-                {faculty.department && (
+                {initialFaculty.department && (
                   <p className="inline-block bg-white/5 border border-white/10 px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase text-on-surface-variant">
-                    {faculty.department}
+                    {initialFaculty.department}
                   </p>
                 )}
               </div>
@@ -204,13 +193,13 @@ export default function FacultyDetailClient({
             <div className="flex items-center justify-center gap-3 bg-[var(--surface-highlight)]/40 border border-white/10 px-6 py-4 rounded-[2rem] flex-shrink-0 shadow-lg backdrop-blur-md">
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-2 text-[var(--primary)] mb-1">
-                  <span className="text-3xl sm:text-4xl">{getMoodEmoji(faculty.overallRating)}</span>
+                  <span className="text-3xl sm:text-4xl">{getMoodEmoji(initialFaculty.overallRating)}</span>
                   <span className="text-5xl font-black tabular-nums leading-none tracking-tighter">
-                    {faculty.overallRating > 0 ? <CountUp value={faculty.overallRating} duration={1.5} /> : 'N/A'}
+                    {initialFaculty.overallRating > 0 ? <CountUp value={initialFaculty.overallRating} duration={1.5} /> : 'N/A'}
                   </span>
                 </div>
                 <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-                  {faculty.reviewCount} Reviews
+                  {initialFaculty.reviewCount} Reviews
                 </span>
               </div>
             </div>
@@ -230,14 +219,14 @@ export default function FacultyDetailClient({
             </h3>
           </div>
           <div>
-            <MetricBar label="Teaching Clarity" value={faculty.stats?.teachingClarity} />
-            <MetricBar label="Approachability" value={faculty.stats?.approachability} />
-            <MetricBar label="Grading Fairness" value={faculty.stats?.gradingFairness} />
+            <MetricBar label="Teaching Clarity" value={initialFaculty.stats?.teachingClarity} />
+            <MetricBar label="Approachability" value={initialFaculty.stats?.approachability} />
+            <MetricBar label="Grading Fairness" value={initialFaculty.stats?.gradingFairness} />
           </div>
           <div>
-            <MetricBar label="Punctuality" value={faculty.stats?.punctuality} />
-            <MetricBar label="Partiality" value={faculty.stats?.partiality} />
-            <MetricBar label="Behaviour" value={faculty.stats?.behaviour} />
+            <MetricBar label="Punctuality" value={initialFaculty.stats?.punctuality} />
+            <MetricBar label="Partiality" value={initialFaculty.stats?.partiality} />
+            <MetricBar label="Behaviour" value={initialFaculty.stats?.behaviour} />
           </div>
         </motion.div>
 
@@ -265,7 +254,7 @@ export default function FacultyDetailClient({
             student reviews
           </h3>
           <div className="space-y-4">
-            {reviews.length === 0 ? (
+            {optimisticReviews.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="p-10 text-center bg-[var(--surface)]/30 backdrop-blur-md rounded-3xl border border-white/10 border-dashed"
@@ -273,7 +262,7 @@ export default function FacultyDetailClient({
                 <p className="text-on-surface-variant font-bold">no one has spoken yet... suspicious 👀</p>
               </motion.div>
             ) : (
-              reviews.map((rev, i) => (
+              optimisticReviews.map((rev, i) => (
                 <motion.div
                    key={rev.id}
                   initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i < 10 ? i * 0.1 : 0 }}
@@ -298,97 +287,12 @@ export default function FacultyDetailClient({
           </div>
         </motion.div>
 
-        <AnimatePresence>
-          {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => !submitting && setIsModalOpen(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-xl"
-              />
-
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="relative bg-[var(--surface-elevated)] border border-white/10 rounded-[2rem] p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col gap-6 ring-1 ring-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10"
-              >
-                <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                  <h3 className="text-2xl font-black font-[var(--font-headline)]">Expose honestly 🤫</h3>
-                  <button onClick={() => !submitting && setIsModalOpen(false)} className="w-10 h-10 flex justify-center items-center rounded-full bg-white/5 hover:bg-white/10 font-bold text-lg transition-colors">&times;</button>
-                </div>
-
-                {submitError && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 text-sm font-semibold">
-                    {submitError}
-                  </motion.div>
-                )}
-
-                <div className="space-y-6">
-                  {(['teachingClarity', 'approachability', 'gradingFairness', 'punctuality', 'partiality', 'behaviour'] as const).map((param) => {
-                    const val = formParams[param] as number;
-                    const percentage = ((val - 1) / 4) * 100;
-                    return (
-                      <div key={param} className="relative">
-                        <div className="flex justify-between text-xs sm:text-sm mb-3 font-bold tracking-wide uppercase text-on-surface-variant">
-                          <span>{param.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          <span className="text-[var(--primary)] tabular-nums">{val}/5</span>
-                        </div>
-                        <div className="relative w-full h-2 bg-white/10 rounded-full">
-                          <div className="absolute left-0 top-0 bottom-0 bg-[var(--primary)] rounded-full transition-all duration-200" style={{ width: `${percentage}%` }} />
-                          <input
-                            type="range" min="1" max="5" step="1"
-                            value={val}
-                            disabled={submitting}
-                            onChange={(e) => setFormParams({ ...formParams, [param]: parseInt(e.target.value) })}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                          />
-                          <div
-                            className="absolute top-1/2 -mt-2.5 -ml-2.5 w-5 h-5 bg-white rounded-full shadow-[0_0_15px_var(--primary)] pointer-events-none transition-all duration-200 z-10"
-                            style={{ left: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-
-                  <div className="pt-4">
-                    <label className="block text-xs font-bold uppercase tracking-widest mb-3 text-on-surface-variant">Spill the tea (Review)</label>
-                    <textarea
-                      rows={4}
-                      placeholder="e.g. strict grading but teaches well..."
-                      value={formParams.review}
-                      disabled={submitting}
-                      onChange={(e) => setFormParams({ ...formParams, review: e.target.value })}
-                      className="w-full bg-[var(--surface-highlight)]/20 border border-white/10 rounded-2xl p-4 text-sm focus:border-[var(--primary)] focus:ring-1 ring-[var(--primary)]/50 outline-none resize-none transition-all placeholder:text-on-surface-variant/40 text-[var(--text)] font-medium"
-                    />
-                  </div>
-                </div>
-
-                <motion.button
-                  whileTap={!submitting ? { scale: 0.95 } : {}}
-                  onClick={submitReview}
-                  disabled={submitting}
-                  className="w-full mt-4 py-4 rounded-full bg-[var(--primary)] text-[#1a1a1a] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition-all shadow-[0_0_20px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={20} className="animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={20} className="fill-[#1a1a1a]/20" />
-                      Post Review
-                    </>
-                  )}
-                </motion.button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+        <ReviewModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          facultyId={initialFaculty.id}
+          onSuccess={handleReviewSuccess}
+        />
 
       </div>
     </div>
