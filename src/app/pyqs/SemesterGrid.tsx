@@ -74,11 +74,6 @@ export default function SemesterGrid({ semesters }: SemesterGridProps) {
                 {sem}
               </span>
 
-              {/* Icon */}
-              <span className="text-2xl leading-none" role="img" aria-label={`Semester ${sem}`}>
-                {semesterEmojis[(sem - 1) % semesterEmojis.length]}
-              </span>
-
               {/* Label */}
               <div className="space-y-0.5">
                 <span

@@ -50,7 +50,7 @@ export default function PYQPage() {
       </div>
       {/* Header */}
       <section className="-mt-3 space-y-2">
-        <p className="theme-kicker">last night saviour papers 💀</p>
+        <p className="theme-kicker">last night saviour papers</p>
         <h1
           className="font-headline text-[3.15rem] font-bold leading-[0.88] tracking-tight"
           style={{ color: 'var(--primary)' }}
