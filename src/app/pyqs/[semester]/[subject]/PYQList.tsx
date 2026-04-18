@@ -11,7 +11,7 @@ interface PYQListProps {
   semester: number;
 }
 
-type FilterType = 'All' | 'PYQ' | 'CT' | 'Other';
+type FilterType = 'All' | 'PYQ' | 'CT' | 'Note' | 'Other';
 
 const examTypeBadge: Record<string, { label: string; color: string; bg: string; border: string }> = {
   PYQ: {
@@ -26,6 +26,12 @@ const examTypeBadge: Record<string, { label: string; color: string; bg: string; 
     bg: 'color-mix(in srgb, var(--secondary) 12%, transparent)',
     border: 'color-mix(in srgb, var(--secondary) 28%, transparent)',
   },
+  Note: {
+    label: 'Note',
+    color: '#10b981', // Emerald-500
+    bg: 'rgba(16, 185, 129, 0.12)',
+    border: 'rgba(16, 185, 129, 0.28)',
+  },
   Other: {
     label: 'Other',
     color: 'var(--accent)',
@@ -39,7 +45,7 @@ export default function PYQList({ pyqs, subject, semester }: PYQListProps) {
 
   const availableFilters = useMemo(() => {
     const types = new Set(pyqs.map((p) => (p.exam_type as FilterType) || 'Other'));
-    const order: FilterType[] = ['All', 'PYQ', 'CT', 'Other'];
+    const order: FilterType[] = ['All', 'PYQ', 'CT', 'Note', 'Other'];
     return order.filter((f) => f === 'All' || types.has(f));
   }, [pyqs]);
 

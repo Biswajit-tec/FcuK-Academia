@@ -31,14 +31,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 async function getPYQs(semester: number, subject: string): Promise<PYQItem[]> {
   const { data } = await supabase
     .from('pyqs')
     .select('id, semester, subject_name, exam_type, year, source_label, file_url')
     .eq('semester', semester)
-    .eq('subject_name', subject)
+    .ilike('subject_name', subject)
     .order('year', { ascending: false, nullsFirst: false })
     .order('source_label', { ascending: true });
 

@@ -21,22 +21,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 async function getSubjects(semester: number): Promise<string[]> {
   const { data } = await supabase
     .from('pyqs')
     .select('subject_name')
-    .eq('semester', semester)
-    .order('subject_name', { ascending: true });
+    .eq('semester', semester);
 
-  const subjects = [
-    ...new Map(
-      (data ?? []).map((r: { subject_name: string }) => [r.subject_name, r.subject_name])
-    ).values(),
-  ].sort((a, b) => a.localeCompare(b));
+  // Use a case-insensitive Map to group subjects
+  const subjectMap = new Map<string, string>();
+  (data ?? []).forEach((r: { subject_name: string }) => {
+    const key = r.subject_name.trim().toLowerCase();
+    // Keep the "best" casing (prefer capitalized)
+    if (!subjectMap.has(key) || (r.subject_name[0] === r.subject_name[0].toUpperCase())) {
+      subjectMap.set(key, r.subject_name.trim());
+    }
+  });
 
-  return subjects;
+  return Array.from(subjectMap.values()).sort((a, b) => a.localeCompare(b));
 }
 
 async function SubjectContent({ semester }: { semester: number }) {

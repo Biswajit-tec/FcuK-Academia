@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * FcuK Academia — PYQ Scraper v2
+ * FcuK Academia — Resource Scraper v3
  * ============================================================
- * Fixed: "View" buttons are React-controlled <button> elements
- * with no href/data attrs. Strategy: click each button, wait
- * for the /view page to load, extract the Google Drive URL from
- * the iframe/embed, then download and upload the PDF.
+ * Support included for for Study Notes, Folder Viewers, and 
+ * all file types (PDF, PPTX, Docx, etc.).
  *
  * Usage:
  *   node scripts/pyq-scraper/scrape.mjs
@@ -61,92 +59,144 @@ function extractYear(label) {
 
 function detectExamType(label) {
   const l = label.toLowerCase();
-  if (l.includes('ct') || l.includes('cycle test')) return 'CT';
-  if (l.includes('pyq') || l.includes('previous')) return 'PYQ';
+  if (l.includes('note') || l.includes('study') || l.includes('unit') || l.includes('chapter') || l.includes('syllabus')) return 'Note';
+  if (/\b(ct|cycle\s*test)\b/i.test(l)) return 'CT';
+  if (/\b(pyq|previous|university)\b/i.test(l)) return 'PYQ';
   return 'Other';
 }
 
-/** Filter: only keep PYQ/CT labels, skip notes/strategies/syllabus */
-function isPYQLabel(label) {
+/** Filter: keep everything that looks like a valid resource */
+function isResourceLabel(label) {
   const l = label.toLowerCase();
+  // We want to download practically everything except maybe "strategies" or "back" buttons (though back is handled elsewhere)
+  if (l.includes('back')) return false;
+  
   return (
     l.includes('pyq') ||
     l.includes('ct') ||
     l.includes('cycle') ||
     l.includes('more pyq') ||
+    l.includes('note') ||
+    l.includes('study') ||
+    l.includes('unit') ||
+    l.includes('chapter') ||
+    l.includes('syllabus') ||
     /\b20\d{2}\b/.test(label) ||
     /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(label)
   );
 }
 
-/** Download a URL to a local file, following redirects */
-function downloadFile(url, dest) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
-
-    const doRequest = (reqUrl) => {
-      const proto = reqUrl.startsWith('https') ? https : http;
-      proto.get(reqUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          file.close();
-          try { fs.unlinkSync(dest); } catch {}
-          const next = res.headers.location.startsWith('http')
-            ? res.headers.location
-            : new URL(res.headers.location, reqUrl).href;
-          return downloadFile(next, dest).then(resolve).catch(reject);
-        }
-        if (res.statusCode !== 200) {
-          file.close();
-          return reject(new Error(`HTTP ${res.statusCode} for ${reqUrl}`));
-        }
-        res.pipe(file);
-        file.on('finish', () => file.close(resolve));
-        file.on('error', reject);
-      }).on('error', (e) => {
-        try { fs.unlinkSync(dest); } catch {}
-        reject(e);
-      });
-    };
-
-    doRequest(url);
-  });
-}
 
 /** Convert any Google Drive view URL → direct download URL */
+/** Download a URL to a local file, following redirects up to 5 levels */
+async function downloadFile(url, dest, maxRedirects = 5) {
+  let currentUrl = url;
+  let redirects = 0;
+
+  while (redirects < maxRedirects) {
+    const proto = currentUrl.startsWith('https') ? https : http;
+    
+    const result = await new Promise((resolve, reject) => {
+      proto.get(currentUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const nextUrl = res.headers.location.startsWith('http')
+            ? res.headers.location
+            : new URL(res.headers.location, currentUrl).href;
+          resolve({ redirect: nextUrl });
+          return;
+        }
+
+        if (res.statusCode !== 200) {
+          reject(new Error(`HTTP ${res.statusCode} for ${currentUrl}`));
+          return;
+        }
+
+        const file = fs.createWriteStream(dest);
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          resolve({ 
+            contentType: res.headers['content-type'],
+            finalUrl: currentUrl 
+          });
+        });
+        file.on('error', (err) => {
+          file.close();
+          try { fs.unlinkSync(dest); } catch {}
+          reject(err);
+        });
+      }).on('error', reject);
+    });
+
+    if (result.redirect) {
+      currentUrl = result.redirect;
+      redirects++;
+    } else {
+      return result;
+    }
+  }
+
+  throw new Error(`Too many redirects (${maxRedirects})`);
+}
 function toDownloadUrl(viewerUrl) {
   if (!viewerUrl) return null;
 
   // Pattern: /view?url=https://drive.google.com/...
-  let parsed;
-  try { parsed = new URL(viewerUrl); } catch { return null; }
-
-  const urlParam = parsed.searchParams.get('url');
-  const target = urlParam || viewerUrl;
+  let target = viewerUrl;
+  try {
+    const parsed = new URL(viewerUrl);
+    const urlParam = parsed.searchParams.get('url');
+    if (urlParam) target = urlParam;
+  } catch {}
 
   // Extract Drive file ID
   const patterns = [
-    /\/file\/d\/([-\w]{15,})/,
-    /[?&]id=([-\w]{15,})/,
-    /open\?id=([-\w]{15,})/,
+    /\/file\/d\/([-\w]{25,})/,
+    /\/d\/([-\w]{25,})/,
+    /[?&]id=([-\w]{25,})/,
+    /open\?id=([-\w]{25,})/,
   ];
   for (const pattern of patterns) {
     const m = target.match(pattern);
     if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
   }
 
-  // docs.google.com/document export
-  if (target.includes('docs.google.com')) {
-    const idMatch = target.match(/\/d\/([-\w]{15,})/);
-    if (idMatch) return `https://docs.google.com/document/d/${idMatch[1]}/export?format=pdf`;
+  // docs.google.com/document/presentation/spreadsheets export
+  const docMatch = target.match(/\/d\/([-\w]{25,})/);
+  if (docMatch) {
+    const id = docMatch[1];
+    if (target.includes('document')) return `https://docs.google.com/document/d/${id}/export?format=pdf`;
+    if (target.includes('presentation')) return `https://docs.google.com/presentation/d/${id}/export/pptx`;
+    if (target.includes('spreadsheets')) return `https://docs.google.com/spreadsheets/d/${id}/export?format=xlsx`;
   }
 
   return target; // fallback
 }
 
+/** Get extension from URL or content-type */
+function getExtension(url, responseHeaders) {
+  if (url.includes('format=pdf') || url.includes('export?format=pdf')) return 'pdf';
+  if (url.includes('export/pptx')) return 'pptx';
+  if (url.includes('format=xlsx')) return 'xlsx';
+  
+  const contentType = responseHeaders?.['content-type'] || '';
+  if (contentType.includes('pdf')) return 'pdf';
+  if (contentType.includes('presentation')) return 'pptx';
+  if (contentType.includes('word')) return 'docx';
+  if (contentType.includes('image/jpeg')) return 'jpg';
+  if (contentType.includes('image/png')) return 'png';
+  
+  // Try to extract from URL if possible
+  const m = url.match(/\.([a-z0-9]{2,4})([?#]|$)/i);
+  if (m) return m[1].toLowerCase();
+
+  return 'pdf'; // default
+}
+
 /** Upload buffer to Supabase Storage */
-async function uploadToSupabase(fileBuffer, storagePath) {
+async function uploadToSupabase(fileBuffer, storagePath, contentType = 'application/pdf') {
   const { error } = await supabase.storage.from(BUCKET).upload(storagePath, fileBuffer, {
-    contentType: 'application/pdf',
+    contentType,
     upsert: false,
   });
 
@@ -187,7 +237,7 @@ async function insertPYQ({ semester, subjectName, subjectRaw, examType, year, so
  * 3. For each: click the button on a NEW PAGE, wait for /view navigation,
  *    capture the URL, extract the Drive file ID
  */
-async function extractPYQsFromPage(browser, subjectPageUrl) {
+async function extractResourcesFromPage(browser, subjectPageUrl) {
   // Load subject page to extract button order + labels
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(30000);
@@ -251,24 +301,38 @@ async function extractPYQsFromPage(browser, subjectPageUrl) {
  * Click the Nth "View" button on the page, intercept the navigation to /view,
  * and extract the real Google Drive URL from the viewer page.
  */
-async function extractUrlFromViewButton(browser, subjectPageUrl, buttonIndex) {
+/**
+ * Click the Nth "View" button on the page, intercept the navigation,
+ * and extract the real Google Drive URL(s).
+ * Returns an array of { url, subLabel } objects.
+ */
+async function extractResourceUrls(browser, subjectPageUrl, buttonIndex) {
   const viewPage = await browser.newPage();
-  viewPage.setDefaultNavigationTimeout(30000);
-  await viewPage.setUserAgent('Mozilla/5.0');
+  viewPage.setDefaultNavigationTimeout(60000);
+  await viewPage.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36');
 
-  let capturedUrl = null;
-  const setCaptured = (u) => {
-    if (!capturedUrl && u && (u.includes('drive.google') || u.includes('docs.google'))) {
-      capturedUrl = u;
+  const capturedUrls = new Map(); // url -> label
+  const addCaptured = (u, label = '') => {
+    // Only capture URLs that look like actual file views or internal download links
+    // Ignore sync, metadata, clientmodel, etc.
+    if (!u) return;
+    const isDriveFile = /google\.com\/.*(file\/d\/|id=|open\?id=|uc\?|d\/[-\w]{25,})/.test(u);
+    const isJunk = /clientmodel|sync|log|drive_sync|metadata/.test(u);
+
+    if (isDriveFile && !isJunk) {
+      if (!capturedUrls.has(u)) {
+        capturedUrls.set(u, label);
+      }
     }
   };
 
-  viewPage.on('request', r => setCaptured(r.url()));
-  viewPage.on('response', r => setCaptured(r.url()));
+  viewPage.on('request', r => addCaptured(r.url()));
+  viewPage.on('response', r => addCaptured(r.url()));
 
   try {
+    console.log(`\n         [DEBUG] Opening subject page for button ${buttonIndex}`);
     await viewPage.goto(subjectPageUrl, { waitUntil: 'networkidle2' });
-    await viewPage.waitForSelector('button', { timeout: 10000 });
+    await viewPage.waitForSelector('button', { timeout: 15000 });
 
     // Catch window.open
     await viewPage.evaluate(() => {
@@ -285,50 +349,144 @@ async function extractUrlFromViewButton(browser, subjectPageUrl, buttonIndex) {
 
     if (buttonIndex >= filteredViewBtns.length) {
       await viewPage.close();
-      return null;
+      return [];
     }
 
     // Click "View" natively
+    console.log(`         [DEBUG] Clicking View button...`);
     await viewPage.evaluate((el) => {
       el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
     }, filteredViewBtns[buttonIndex]);
 
-    // Poll for up to 10 seconds checking network, window.open, URL changes, and the DOM
-    for (let i = 0; i < 50; i++) {
-      if (capturedUrl) break;
+    // Wait for navigation or modal to settle
+    await new Promise(r => setTimeout(r, 2000));
 
-      const state = await viewPage.evaluate(() => {
-        if (window.__capturedUrl) return window.__capturedUrl;
+    // Check if we landed on a Folder Viewer or File Viewer
+    const currentUrl = viewPage.url();
+    console.log(`         [DEBUG] Current URL after click: ${currentUrl}`);
+
+    if (currentUrl.includes('/folder-viewer')) {
+      console.log(`         [DEBUG] Detected Folder Viewer. Extracting multiple files...`);
+      // It's a folder viewer. Find all thumbnails and click them.
+      // Based on typical structure, they might be in a grid. 
+      // Let's look for elements that look like thumbnails or items.
+      const items = await viewPage.evaluate(() => {
+        // Try various selectors common in such viewer apps
+        const selectors = [
+          'div[class*="Grid"] > div',
+          'div[class*="grid"] > div',
+          '.folder-item',
+          '.file-item',
+          'div > p + div > img', // thumbnail image with text above/below
+          'main div div' // broad fallback
+        ];
         
-        const loc = window.location.href;
-        if (loc.includes('drive.google') || loc.includes('docs.google')) return loc;
-
-        // Check if there's a Download button and click it to trigger network request
-        const btnsAndLinks = Array.from(document.querySelectorAll('button, a'));
-        for (const el of btnsAndLinks) {
-           if (el.textContent?.toLowerCase().includes('download')) {
-              // If it's a link, we might just be able to grab href
-              if (el.tagName === 'A' && el.href && !el.href.startsWith('javascript')) {
-                 if (el.href.includes('drive') || el.href.includes('google')) return el.href;
-              }
-              // Just click it!
-              el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-           }
+        let elements = [];
+        for (const sel of selectors) {
+          const found = Array.from(document.querySelectorAll(sel));
+          if (found.length > 0) {
+            elements = found;
+            break;
+          }
         }
-        
-        // Also look for iframes injected into the modal
-        const driveIframe = Array.from(document.querySelectorAll('iframe')).find(f => f.src?.includes('drive.google'));
-        if (driveIframe) return driveIframe.src;
 
-        return null;
+        // Filter to elements that likely contain a name and are clickable
+        return elements
+          .map((el, i) => ({
+            index: i,
+            label: el.textContent?.trim() || `File ${i + 1}`,
+            hasImage: !!el.querySelector('img'),
+          }))
+          .filter(item => item.label.length > 0 && item.label.length < 100);
       });
 
-      if (state) setCaptured(state);
-      await new Promise(r => setTimeout(r, 200));
-    }
+      console.log(`         [DEBUG] Found ${items.length} items in folder.`);
+      
+      const results = [];
+      const originalFolderUrl = viewPage.url();
 
-    await viewPage.close();
-    return capturedUrl;
+      for (const item of items) {
+        console.log(`            -> Extracting link for: "${item.label}"`);
+        // Re-navigate or ensure we are on the folder page
+        if (viewPage.url() !== originalFolderUrl) {
+          await viewPage.goto(originalFolderUrl, { waitUntil: 'networkidle2' });
+        }
+
+        // Get the element again to click it
+        const elementToClick = await viewPage.evaluateHandle((idx) => {
+          const selectors = ['div[class*="Grid"] > div', 'div[class*="grid"] > div', '.folder-item', '.file-item'];
+          let elements = [];
+          for (const sel of selectors) {
+            const found = Array.from(document.querySelectorAll(sel));
+            if (found.length > 0) { elements = found; break; }
+          }
+          return elements[idx];
+        }, item.index);
+
+        if (elementToClick) {
+          window.__capturedUrl = null; // reset
+          try {
+            await viewPage.evaluate(el => el.click(), elementToClick);
+            // Poll for URL
+            for (let i = 0; i < 30; i++) {
+              const driveUrl = await viewPage.evaluate(() => {
+                if (window.__capturedUrl) return window.__capturedUrl;
+                const loc = window.location.href;
+                if (loc.includes('drive.google') || loc.includes('docs.google')) return loc;
+                const iframe = document.querySelector('iframe[src*="google"]');
+                if (iframe) return iframe.src;
+                return null;
+              });
+              if (driveUrl) {
+                results.push({ url: driveUrl, subLabel: item.label });
+                break;
+              }
+              await new Promise(r => setTimeout(r, 200));
+            }
+          } catch (e) {
+            console.log(`               ⚠️  Failed to click item ${item.index}: ${e.message}`);
+          }
+          // If we navigated away, go back
+          if (viewPage.url() !== originalFolderUrl) {
+            await viewPage.goBack({ waitUntil: 'networkidle2' }).catch(() => {});
+          }
+        }
+      }
+      await viewPage.close();
+      return results;
+
+    } else {
+      // Regular File Viewer or direct Drive embed
+      console.log(`         [DEBUG] Detected File Viewer. Polling for single URL...`);
+      let resultUrl = null;
+
+      for (let i = 0; i < 50; i++) {
+        // Source 1: window.open result
+        const captured = await viewPage.evaluate(() => window.__capturedUrl);
+        if (captured) { resultUrl = captured; break; }
+
+        // Source 2: Current iframe
+        const iframeSrc = await viewPage.evaluate(() => {
+          const f = document.querySelector('iframe[src*="drive.google.com"]');
+          return f ? f.src : null;
+        });
+        if (iframeSrc) { resultUrl = iframeSrc; break; }
+
+        // Source 3: Network observer (already handled in addCaptured)
+        if (capturedUrls.size > 0) {
+          // Find the best URL among captured
+          const items = Array.from(capturedUrls.keys());
+          // Prefer URLs with /file/d/ or id=
+          resultUrl = items.find(u => u.includes('file/d/') || u.includes('id=')) || items[0];
+          break;
+        }
+
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      await viewPage.close();
+      return resultUrl ? [{ url: resultUrl, subLabel: '' }] : [];
+    }
   } catch (err) {
     try { await viewPage.close(); } catch {}
     throw err;
@@ -396,100 +554,114 @@ async function main() {
 
         try {
           // Load subject page, find all View button labels
-          const { page: subjectPage, buttonData } = await extractPYQsFromPage(browser, subLink.href);
+          const { page: subjectPage, buttonData } = await extractResourcesFromPage(browser, subLink.href);
           await subjectPage.close();
 
-          // Filter to only PYQ/CT items
-          const pyqButtonData = buttonData.filter(b => isPYQLabel(b.label));
+          // Filter to only valid resources
+          const resourceButtonData = buttonData.filter(b => isResourceLabel(b.label));
 
-          if (pyqButtonData.length === 0) {
-            console.log(`      ℹ️  No PYQ buttons found (${buttonData.length} total buttons)`);
+          if (resourceButtonData.length === 0) {
+            console.log(`      ℹ️  No matching resource buttons found (${buttonData.length} total buttons)`);
             continue;
           }
 
-          console.log(`      Found ${pyqButtonData.length} PYQ/CT buttons`);
+          console.log(`      Found ${resourceButtonData.length} matching resource buttons`);
 
-          // ── Step 4: Click each PYQ button and extract URL ──
-          for (const btnInfo of pyqButtonData) {
+          // ── Step 4: Click each button and extract URL(s) ──
+          for (const btnInfo of resourceButtonData) {
             const sourceLabel = btnInfo.label;
             const examType = detectExamType(sourceLabel);
             const year = extractYear(sourceLabel);
 
-            process.stdout.write(`      ⬇️   "${sourceLabel}" ... `);
+            console.log(`\n      🌐  Processing: "${sourceLabel}"`);
 
-            let driveUrl;
+            let resources = [];
             try {
-              driveUrl = await extractUrlFromViewButton(
+              resources = await extractResourceUrls(
                 browser,
                 subLink.href,
                 btnInfo.buttonIndexAmongViewButtons
               );
             } catch (err) {
-              console.log(`\n         ⚠️  Click failed: ${err.message}`);
+              console.log(`         ⚠️  Click failed: ${err.message}`);
               totalErrors++;
               continue;
             }
 
-            if (!driveUrl) {
-              console.log('⚠️  Could not extract URL, skipping');
+            if (resources.length === 0) {
+              console.log('         ⚠️  Could not extract any URLs, skipping');
               totalErrors++;
               continue;
             }
 
-            const downloadUrl = toDownloadUrl(driveUrl);
-            if (!downloadUrl) {
-              console.log(`⚠️  Unrecognised URL pattern: ${driveUrl}`);
-              totalErrors++;
-              continue;
-            }
+            for (const res of resources) {
+              const driveUrl = res.url;
+              const subLabel = res.subLabel || '';
+              const fullLabel = subLabel ? `${sourceLabel} - ${subLabel}` : sourceLabel;
+              
+              process.stdout.write(`         ⬇️   "${fullLabel}" ... `);
 
-            // Build storage path
-            const safeSubject = subjectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60);
-            const safeLabel = sourceLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
-            const storagePath = `${semesterNum}/${safeSubject}/${safeLabel}.pdf`;
-            const tmpFile = path.join(TMP_DIR, `${semesterNum}_${safeSubject}_${safeLabel}.pdf`);
-
-            try {
-              console.log(`\n         [DEBUG] Downloading: ${downloadUrl}`);
-              // Download
-              await downloadFile(downloadUrl, tmpFile);
-              const fileBuffer = fs.readFileSync(tmpFile);
-
-              // Validate PDF
-              if (fileBuffer.length < 10 || fileBuffer.slice(0, 4).toString('ascii') !== '%PDF') {
-                console.log('⚠️  Not a valid PDF, skipping');
-                fs.unlinkSync(tmpFile);
+              const downloadUrl = toDownloadUrl(driveUrl);
+              if (!downloadUrl) {
+                console.log(`⚠️  Unrecognised URL pattern: ${driveUrl}`);
                 totalErrors++;
                 continue;
               }
 
-              // Upload to Supabase
-              const publicUrl = await uploadToSupabase(fileBuffer, storagePath);
-              fs.unlinkSync(tmpFile);
+              // Build storage path
+              const safeSubject = subjectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60);
+              const safeLabel = fullLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80);
+              
+              // We'll determine extension after hit
+              const tmpFileBase = path.join(TMP_DIR, `${semesterNum}_${safeSubject}_${safeLabel}`);
+              let tmpFile = `${tmpFileBase}.tmp`;
 
-              // Insert metadata
-              const status = await insertPYQ({
-                semester: semesterNum,
-                subjectName,
-                subjectRaw,
-                examType,
-                year,
-                sourceLabel,
-                fileUrl: publicUrl,
-                storagePath,
-              });
+              try {
+                // Download with redirect following
+                const { contentType, finalUrl } = await downloadFile(downloadUrl, tmpFile);
+                
+                const ext = getExtension(finalUrl, { 'content-type': contentType });
+                const finalTmpFile = `${tmpFileBase}.${ext}`;
+                fs.renameSync(tmpFile, finalTmpFile);
+                tmpFile = finalTmpFile;
 
-              if (status === 'duplicate') {
-                console.log('⏭️  duplicate');
-                totalSkipped++;
-              } else {
-                console.log('✅  done');
-                totalInserted++;
+                const fileBuffer = fs.readFileSync(tmpFile);
+                if (fileBuffer.length < 100) {
+                  console.log('⚠️  File too small, skipping');
+                  continue;
+                }
+
+                const storagePath = `${semesterNum}/${safeSubject}/${safeLabel}.${ext}`;
+
+                // Upload to Supabase
+                const publicUrl = await uploadToSupabase(fileBuffer, storagePath, contentType);
+                
+                // Insert metadata
+                const status = await insertPYQ({
+                  semester: semesterNum,
+                  subjectName,
+                  subjectRaw,
+                  examType,
+                  year,
+                  sourceLabel: fullLabel,
+                  fileUrl: publicUrl,
+                  storagePath,
+                });
+
+                if (status === 'duplicate') {
+                  console.log('⏭️  duplicate');
+                  totalSkipped++;
+                } else {
+                  console.log('✅  done');
+                  totalInserted++;
+                }
+
+              } catch (err) {
+                console.log(`\n            ❌  Error: ${err.message}`);
+                totalErrors++;
+              } finally {
+                if (fs.existsSync(tmpFile)) try { fs.unlinkSync(tmpFile); } catch {}
               }
-            } catch (err) {
-              console.log(`\n         ❌  Error: ${err.message}`);
-              totalErrors++;
-              if (fs.existsSync(tmpFile)) try { fs.unlinkSync(tmpFile); } catch {}
             }
           }
         } catch (err) {
