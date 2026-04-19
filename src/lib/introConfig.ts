@@ -8,8 +8,8 @@ export const ENABLE_INTRO_SEQUENCE =
   process.env.NEXT_PUBLIC_ENABLE_INTRO_SEQUENCE === 'true';
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
-export const CINEMATIC_SEEN_KEY    = 'fcuk-cinematic-last-seen';
-export const CINEMATIC_VARIANT_KEY = 'fcuk-cinematic-variant';
+export const CINEMATIC_SEEN_KEY    = 'fcuk-cinematic-last-seen-v2';
+export const CINEMATIC_VARIANT_KEY = 'fcuk-cinematic-variant-v2';
 export const INTRO_24H_MS          = 24 * 60 * 60 * 1_000;
 
 // ─── Rotation Logic ───────────────────────────────────────────────────────────
