@@ -26,17 +26,23 @@ export function getVariantIndex(): 0 | 1 | 2 | 3 | 4 {
   return random;
 }
 
-// True when no in-memory record exists for the current session.
-// In-memory guarantees it plays exactly once per app load (wipes completely when app is killed/restarting)
-let hasPlayedThisSession = false;
-
+/** True when no sessionStorage record exists for the current session. */
 export function shouldShowCinematic(): boolean {
   if (typeof window === 'undefined') return false;
-  return !hasPlayedThisSession;
+  
+  // Feature flag check
+  if (!ENABLE_INTRO_SEQUENCE) return false;
+
+  try {
+    const raw = sessionStorage.getItem(CINEMATIC_SEEN_KEY);
+    return !raw;
+  } catch {
+    return true; // storage unavailable → show intro
+  }
 }
 
+/** Write a session record so the next refresh within the same tab skips the intro. */
 export function markCinematicSeen(variantIndex: number): void {
-  hasPlayedThisSession = true;
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem(CINEMATIC_SEEN_KEY,    'true');

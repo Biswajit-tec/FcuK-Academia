@@ -17,6 +17,7 @@ import SwipeContainer from '@/components/layout/SwipeContainer';
 import OnboardingOverlay from '@/components/onboarding/OnboardingOverlay';
 import { navigateToTab, syncRouteTabPath, useActiveTabPath } from '@/components/layout/tab-navigation';
 import IntroOverlay from '@/components/ui/IntroOverlay';
+import CinematicIntroOverlay from '@/components/ui/CinematicIntroOverlay';
 import InstallGate from '@/components/system/InstallGate';
 
 const HIDE_NAV_PATHS = ['/login'];
@@ -108,6 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <InstallGate>
       <div className="relative mx-auto min-h-screen w-full max-w-[28rem] overflow-x-hidden sm:max-w-[34rem] lg:max-w-[44rem] xl:max-w-[52rem]">
         <IntroOverlay />
+        <CinematicIntroOverlay />
         <OnboardingOverlay />
 
         <div className="app-shell transition-opacity duration-300">

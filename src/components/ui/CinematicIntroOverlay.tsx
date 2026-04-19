@@ -27,17 +27,17 @@ export default function CinematicIntroOverlay() {
   const splashWasShownRef = useRef(false);
 
   useEffect(() => {
-    if (showIntro) {
-      // Splash is currently visible — remember that it ran
-      splashWasShownRef.current = true;
-      return;
-    }
+    // If the splash screen is still visible, wait.
+    if (showIntro) return;
 
-    // showIntro just turned false. Only trigger cinematic at this moment
-    // (either right after splash finishes, or immediately if there was no splash).
-    if (ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
-      setShow(true);
-    }
+    // Small delay ensures the IntroOverlay exit animation completes before cinematic starts
+    const timer = setTimeout(() => {
+      if (ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
+        setShow(true);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [showIntro]);
 
   if (!show) return null;

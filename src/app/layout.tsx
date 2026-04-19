@@ -109,7 +109,6 @@ export default async function RootLayout({
             <AppStateProvider>
               <NotificationProvider>
                 <CommunityPopup />
-                <CinematicIntroOverlay />
                 <AppLayout>
                   {children}
                 </AppLayout>

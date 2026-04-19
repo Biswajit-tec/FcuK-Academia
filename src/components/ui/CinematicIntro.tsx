@@ -554,22 +554,47 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
   const timersRef     = useRef<ReturnType<typeof setTimeout>[]>([]);
   const fadeTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  // Audio handles
-  const ambientRef = useRef<HTMLAudioElement | null>(null);
+  // Audio registry for robust cleanup (prevents "ghost audio" on skip/close)
+  const ambientRef      = useRef<HTMLAudioElement | null>(null);
+  const soundsRegistry  = useRef<HTMLAudioElement[]>([]);
+
+  const stopAllAudio = useCallback(() => {
+    // 1. Stop persistent ambient
+    if (ambientRef.current) {
+      const amb = ambientRef.current;
+      amb.pause();
+      amb.src = '';
+      amb.load();
+      ambientRef.current = null;
+    }
+
+    // 2. Stop all ad-hoc sound effects in the registry
+    soundsRegistry.current.forEach((audio) => {
+      try {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      } catch (e) { /* already cleanup */ }
+    });
+    soundsRegistry.current = [];
+  }, []);
 
   const playSFX = useCallback((path: string, volume = 0.6) => {
+    if (typeof window === 'undefined') return;
     try {
       const audio = new Audio(path);
       audio.volume = volume;
+      
+      // Add to registry for potential emergency stop
+      soundsRegistry.current.push(audio);
+      
+      // Auto-remove from registry when done to save memory
+      audio.onended = () => {
+        soundsRegistry.current = soundsRegistry.current.filter((a) => a !== audio);
+      };
+
       audio.play().catch(() => {/* Autoplay restricted */});
     } catch { /* Silent fail */ }
-  }, []);
-
-  const stopAllAudio = useCallback(() => {
-    if (ambientRef.current) {
-      ambientRef.current.pause();
-      ambientRef.current = null;
-    }
   }, []);
 
   const safeComplete = useCallback(() => {
@@ -589,17 +614,18 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
     // Scene transitions
     add(() => {
       setScene(0);
-      playSFX(CINEMATIC_SOUNDS.reveal, 0.7); // Increased volume
+      playSFX(CINEMATIC_SOUNDS.reveal, 1.0); // Boosted volume
       
       // Start Ambient backdrop (deep dark drone)
       try {
         const amb = new Audio(CINEMATIC_SOUNDS.ambient);
         amb.loop = true;
-        amb.volume = 0.4; // Increased volume
+        amb.volume = 0.8; // Boosted volume (heard clearly even on low mobile volume)
         amb.play().catch(() => {});
         ambientRef.current = amb;
       } catch {}
     }, 0);
+  // ... rest of the effect ...
 
     add(() => setScene(1), T_S1_START);
     add(() => { setScene(2); setLetterIndex(0); }, T_S2_START);
@@ -617,12 +643,12 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
     add(() => setShowPunch(false), T_PUNCH_OFF);
 
     // Scene 3 + subscenes
-    add(() => { setScene(3); setSubScene(0); playSFX(CINEMATIC_SOUNDS.woosh, 0.8); }, T_S3_START);
-    add(() => { setSubScene(1); playSFX(CINEMATIC_SOUNDS.woosh, 0.8); }, T_SUB_1);
-    add(() => { setSubScene(2); playSFX(CINEMATIC_SOUNDS.woosh, 0.8); }, T_SUB_2);
+    add(() => { setScene(3); setSubScene(0); playSFX(CINEMATIC_SOUNDS.woosh, 1.0); }, T_S3_START);
+    add(() => { setSubScene(1); playSFX(CINEMATIC_SOUNDS.woosh, 1.0); }, T_SUB_1);
+    add(() => { setSubScene(2); playSFX(CINEMATIC_SOUNDS.woosh, 1.0); }, T_SUB_2);
 
     // Scene 4 + ripple
-    add(() => { setScene(4); playSFX(CINEMATIC_SOUNDS.woosh, 0.7); }, T_S4_START);
+    add(() => { setScene(4); playSFX(CINEMATIC_SOUNDS.woosh, 1.0); }, T_S4_START);
     add(() => { setScene(5); playSFX(CINEMATIC_SOUNDS.outro, 1.0); }, T_S5_START);
 
     // Complete + hard-timeout
@@ -632,6 +658,7 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
     return () => {
       t.forEach(clearTimeout);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      stopAllAudio(); // Ensure cleanup on unmount
     };
   }, [safeComplete]);
 
