@@ -611,6 +611,8 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
     timersRef.current = t;
     const add = (fn: () => void, ms: number) => t.push(setTimeout(fn, ms));
 
+    const SETTLE_TIME = 150; // Delay logic initiation until after mounting transition
+
     // Scene transitions
     add(() => {
       setScene(0);
@@ -624,7 +626,7 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
         amb.play().catch(() => {});
         ambientRef.current = amb;
       } catch {}
-    }, 0);
+    }, SETTLE_TIME);
   // ... rest of the effect ...
 
     add(() => setScene(1), T_S1_START);
@@ -710,7 +712,7 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
           alignItems: 'center',
           justifyContent: 'center',
           opacity: fading ? 0 : 1,
-          transition: 'opacity 0.38s ease',
+          transition: fading ? 'opacity 0.62s ease-in' : 'none',
         }}
       >
         {/* Ambient glow layer */}

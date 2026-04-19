@@ -9,8 +9,9 @@ import {
   markCinematicSeen,
   shouldShowCinematic,
 } from '@/lib/introConfig';
-import CinematicIntro from '@/components/ui/CinematicIntro';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '@/context/ThemeContext';
+import CinematicIntro from '@/components/ui/CinematicIntro';
 
 /**
  * Self-activating cinematic intro overlay.
@@ -23,21 +24,16 @@ export default function CinematicIntroOverlay() {
   const { showIntro } = useTheme();
   const variantIndex = useMemo(() => getVariantIndex(), []);
   const [show, setShow] = useState(false);
-  // Track whether the splash was ever shown so we know when it finishes
-  const splashWasShownRef = useRef(false);
 
   useEffect(() => {
-    // If the splash screen is still visible, wait.
+    // If the splash screen is still visible, don't show cinematic yet.
     if (showIntro) return;
 
-    // Small delay ensures the IntroOverlay exit animation completes before cinematic starts
-    const timer = setTimeout(() => {
-      if (ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
-        setShow(true);
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
+    // Trigger immediately when showIntro turns false.
+    // This allows the Cinematic background to start showing while the Logo slides up.
+    if (ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
+      setShow(true);
+    }
   }, [showIntro]);
 
   if (!show) return null;
@@ -49,6 +45,21 @@ export default function CinematicIntroOverlay() {
     setShow(false);
   };
 
-  return <CinematicIntro theme={theme} onComplete={handleComplete} />;
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          key="cinematic-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="fixed inset-0 z-[155]"
+        >
+          <CinematicIntro theme={theme} onComplete={handleComplete} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
