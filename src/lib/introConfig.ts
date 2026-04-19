@@ -5,7 +5,7 @@
  * When false the component never mounts — zero cost.
  */
 export const ENABLE_INTRO_SEQUENCE =
-  process.env.NEXT_PUBLIC_ENABLE_INTRO_SEQUENCE === 'true';
+  process.env.NEXT_PUBLIC_ENABLE_INTRO_SEQUENCE !== 'false';
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 export const CINEMATIC_SEEN_KEY    = 'fcuk-cinematic-last-seen-v2';
@@ -28,23 +28,17 @@ export function getVariantIndex(): 0 | 1 | 2 | 3 | 4 {
   return (Math.floor(Date.now() / 86_400_000) % 5) as 0 | 1 | 2 | 3 | 4;
 }
 
-/** True when no sessionStorage record exists for the current session. */
+// True when no in-memory record exists for the current session.
+// In-memory guarantees it plays exactly once per app load (wipes completely when app is killed/restarting)
+let hasPlayedThisSession = false;
+
 export function shouldShowCinematic(): boolean {
   if (typeof window === 'undefined') return false;
-  
-  // ALWAYS show cinematic in development mode (localhost) as requested
-  if (process.env.NODE_ENV === 'development') return true;
-
-  try {
-    const raw = sessionStorage.getItem(CINEMATIC_SEEN_KEY);
-    return !raw;
-  } catch {
-    return true; // storage unavailable → show intro
-  }
+  return !hasPlayedThisSession;
 }
 
-/** Write a session record so the next refresh within the same tab skips the intro. */
 export function markCinematicSeen(variantIndex: number): void {
+  hasPlayedThisSession = true;
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem(CINEMATIC_SEEN_KEY,    'true');
