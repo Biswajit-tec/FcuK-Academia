@@ -28,18 +28,23 @@ export default function CinematicIntroOverlay() {
   const { cinematicQueued, dismissCinematic } = useTheme();
   const variantIndex = useMemo(() => getVariantIndex(), []);
 
-  // Computed synchronously to avoid an extra render cycle on the skip path.
-  const active = useMemo(
-    () => ENABLE_INTRO_SEQUENCE && shouldShowCinematic(),
-    [], // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  const [active, setActive] = React.useState(false);
+  const [hydrated, setHydrated] = React.useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+    if (ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
+      setActive(true);
+    }
+  }, []);
 
   // When the flag/gate says skip, fire dismissCinematic after first paint.
   useEffect(() => {
-    if (cinematicQueued && !active) {
+    // Only attempt to dismiss if we've finished hydrating and checking the 24h gate.
+    if (hydrated && cinematicQueued && !active) {
       dismissCinematic();
     }
-  }, [active, cinematicQueued, dismissCinematic]);
+  }, [active, cinematicQueued, dismissCinematic, hydrated]);
 
   if (!cinematicQueued || !active) return null;
 

@@ -83,9 +83,14 @@ export function ThemeProvider({
   initialTheme?: ThemeType;
 }) {
   const [theme, setThemeState] = useState<ThemeType>(() => resolveStoredTheme(initialTheme));
-  const [showIntro, setShowIntro] = useState(resolveIntroState);
+  const [showIntro, setShowIntro] = useState(false); // Default to false for SSR
   const [communityPopupDone, setCommunityPopupDone] = useState(false);
   const [cinematicQueued, setCinematicQueued] = useState(false);
+
+  // Client-side hydration for intro state
+  useEffect(() => {
+    setShowIntro(resolveIntroState());
+  }, []);
   const themeConfig = themes[theme];
 
   const setTheme = (newTheme: ThemeType) => {
