@@ -589,13 +589,13 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
     // Scene transitions
     add(() => {
       setScene(0);
-      playSFX(CINEMATIC_SOUNDS.reveal, 0.35); // Softer reveal
+      playSFX(CINEMATIC_SOUNDS.reveal, 0.7); // Increased volume
       
       // Start Ambient backdrop (deep dark drone)
       try {
         const amb = new Audio(CINEMATIC_SOUNDS.ambient);
         amb.loop = true;
-        amb.volume = 0.1; // Sub-audible atmospheric bed
+        amb.volume = 0.4; // Increased volume
         amb.play().catch(() => {});
         ambientRef.current = amb;
       } catch {}
@@ -612,17 +612,17 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
     // Scale punch
     add(() => {
       setShowPunch(true);
-      playSFX(CINEMATIC_SOUNDS.punch, 0.85); // High impact punch
+      playSFX(CINEMATIC_SOUNDS.punch, 1.0); // Max volume
     }, T_PUNCH_ON);
     add(() => setShowPunch(false), T_PUNCH_OFF);
 
     // Scene 3 + subscenes
-    add(() => { setScene(3); setSubScene(0); playSFX(CINEMATIC_SOUNDS.woosh, 0.4); }, T_S3_START);
-    add(() => { setSubScene(1); playSFX(CINEMATIC_SOUNDS.woosh, 0.4); }, T_SUB_1);
-    add(() => { setSubScene(2); playSFX(CINEMATIC_SOUNDS.woosh, 0.4); }, T_SUB_2);
+    add(() => { setScene(3); setSubScene(0); playSFX(CINEMATIC_SOUNDS.woosh, 0.8); }, T_S3_START);
+    add(() => { setSubScene(1); playSFX(CINEMATIC_SOUNDS.woosh, 0.8); }, T_SUB_1);
+    add(() => { setSubScene(2); playSFX(CINEMATIC_SOUNDS.woosh, 0.8); }, T_SUB_2);
 
     // Scene 4 + ripple
-    add(() => { setScene(4); playSFX(CINEMATIC_SOUNDS.woosh, 0.35); }, T_S4_START);
+    add(() => { setScene(4); playSFX(CINEMATIC_SOUNDS.woosh, 0.7); }, T_S4_START);
     add(() => { setScene(5); playSFX(CINEMATIC_SOUNDS.outro, 1.0); }, T_S5_START);
 
     // Complete + hard-timeout

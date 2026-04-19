@@ -10,22 +10,20 @@ export const ENABLE_INTRO_SEQUENCE =
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 export const CINEMATIC_SEEN_KEY    = 'fcuk-cinematic-last-seen-v2';
 export const CINEMATIC_VARIANT_KEY = 'fcuk-cinematic-variant-v2';
-export const INTRO_24H_MS          = 24 * 60 * 60 * 1_000;
-
 // ─── Rotation Logic ───────────────────────────────────────────────────────────
 /**
- * Returns 0 | 1 | 2 — cycles every UTC calendar day.
- * Day 0 → dark, Day 1 → soft, Day 2 → minimal, then repeats.
- * Different users who open the app on different days see different variants.
+ * Returns a random theme index (0-4) for each new session.
+ * Stored in sessionStorage so it stays consistent within one session
+ * but randomises fresh every time the app is killed and reopened.
  */
 export function getVariantIndex(): 0 | 1 | 2 | 3 | 4 {
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-    const raw = sessionStorage.getItem('dev-variant');
-    const next = raw ? ((Number(raw) + 1) % 5) : 0;
-    sessionStorage.setItem('dev-variant', String(next));
-    return next as 0 | 1 | 2 | 3 | 4;
-  }
-  return (Math.floor(Date.now() / 86_400_000) % 5) as 0 | 1 | 2 | 3 | 4;
+  if (typeof window === 'undefined') return 0;
+  const VARIANT_SESSION_KEY = 'fcuk-cinematic-variant-session';
+  const stored = sessionStorage.getItem(VARIANT_SESSION_KEY);
+  if (stored !== null) return Number(stored) as 0 | 1 | 2 | 3 | 4;
+  const random = Math.floor(Math.random() * 5) as 0 | 1 | 2 | 3 | 4;
+  sessionStorage.setItem(VARIANT_SESSION_KEY, String(random));
+  return random;
 }
 
 // True when no in-memory record exists for the current session.
