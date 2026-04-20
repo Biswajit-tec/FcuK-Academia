@@ -51,7 +51,7 @@ export default function AddFacultyForm({ onSuccess, onClose }: AddFacultyFormPro
       exit={{ height: 0, opacity: 0 }}
       className="overflow-hidden mb-8"
     >
-      <div className="bg-[var(--surface-elevated)]/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative">
+      <div className="bg-[var(--surface-elevated)] border border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative">
         <div className="absolute top-4 right-4">
           <button
             onClick={onClose}

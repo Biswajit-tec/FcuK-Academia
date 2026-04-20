@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 import { useTheme } from '@/context/ThemeContext';
 import { getRevealContainerVariants, getRevealVariants } from '@/lib/motion';
-import { cn } from '@/lib/utils';
+
 
 function useMountedAnimation() {
   const [mounted, setMounted] = useState(false);
@@ -54,7 +54,7 @@ export function RevealHeading({ children, className }: PropsWithChildren<{ class
   return (
     <motion.div
       variants={variants.heading}
-      className={cn(className, 'will-change-transform')}
+      className={className}
       style={{ textShadow: isDark ? 'var(--glow-primary)' : 'none' }}
     >
       {children}
@@ -72,7 +72,7 @@ export function RevealText({ children, className }: PropsWithChildren<{ classNam
   }
 
   return (
-    <motion.div variants={variants.text} className={cn(className, 'will-change-transform')}>
+    <motion.div variants={variants.text} className={className}>
       {children}
     </motion.div>
   );
@@ -88,7 +88,7 @@ export function RevealItem({ children, className }: PropsWithChildren<{ classNam
   }
 
   return (
-    <motion.div variants={variants.item} className={cn(className, 'will-change-transform')}>
+    <motion.div variants={variants.item} className={className}>
       {children}
     </motion.div>
   );

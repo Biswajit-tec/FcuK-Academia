@@ -242,18 +242,18 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                 animate={{ left: currentIndicatorLeft }}
                 initial={false}
                 transition={{
-                  duration: 0.38,
+                  duration: 0.35,
                   ease: [0.22, 1, 0.36, 1],
                 }}
                 style={{
                   width: currentIndicatorWidth,
-                  willChange: 'left, transform',
+                  willChange: 'left',
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden',
                 }}
               >
                 <div
-                  className="relative h-10 w-full overflow-hidden border backdrop-blur-md"
+                  className="relative h-10 w-full overflow-hidden border"
                   style={{
                     borderRadius: '999px',
                     borderColor: 'color-mix(in srgb, var(--primary) 36%, rgba(255,255,255,0.28))',
@@ -359,7 +359,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
               whileTap={{ scale: 0.92 }}
             >
               <div 
-                className="absolute inset-0 rounded-full backdrop-blur-2xl transition-all duration-500 group-hover:duration-300"
+                className="absolute inset-0 rounded-full transition-all duration-300 group-hover:duration-200"
                 style={{
                   background: themeConfig.mode === 'light' 
                     ? 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 20%, rgba(255,255,255,0.6)), color-mix(in srgb, var(--primary) 10%, rgba(255,255,255,0.3)))' 

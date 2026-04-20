@@ -72,18 +72,18 @@
   --page-text-shadow: var(--glow-primary);
 }
 
-/* Mobile-Lite Performance Overrides */
+/* Mobile Performance Overrides */
 @media (max-width: 768px) {
   :root {
+    /* Reduce glow intensity on mobile for better compositing performance */
     --overlay-blur: 8px;
     --glow-primary: 0 0 12px rgba(185, 255, 63, 0.12);
     --glow-secondary: 0 0 10px rgba(126, 247, 255, 0.1);
     --glow-accent: 0 0 10px rgba(255, 138, 91, 0.08);
-  }
-
-  * {
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+    --elevation-soft: 0 8px 20px rgba(0, 0, 0, 0.28);
+    --elevation-card: 0 10px 24px rgba(0, 0, 0, 0.32);
+    --elevation-floating: 0 12px 32px rgba(0, 0, 0, 0.42), 0 0 20px rgba(185, 255, 63, 0.08);
+    --elevation-nav: 0 12px 28px rgba(0, 0, 0, 0.42), 0 0 16px rgba(185, 255, 63, 0.1);
   }
 }
 
@@ -300,6 +300,7 @@
 @layer base {
   html {
     background: var(--background);
+    /* Smooth scroll only on desktop; momentum-scrolling handles it on mobile */
     scroll-behavior: smooth;
   }
 
@@ -317,12 +318,12 @@
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     background-image: var(--page-gradient);
-    background-attachment: fixed;
+    /* REMOVED: background-attachment: fixed — not composited on iOS Safari, causes scroll repaints */
     line-height: 1.55;
+    /* Reduce transition scope: only color/background, not background-image (expensive) */
     transition:
       background-color 0.4s ease,
-      color 0.35s ease,
-      background-image 0.45s ease;
+      color 0.35s ease;
   }
 
   h1, h2, h3, h4, .font-headline {
@@ -341,13 +342,18 @@
   select,
   a {
     transition:
-      color 0.35s ease,
-      background-color 0.35s ease,
-      border-color 0.35s ease,
-      box-shadow 0.4s ease,
-      filter 0.35s ease;
+      color 0.3s ease,
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+    /* Removed: filter transition (expensive on mobile) */
   }
 
+  /* ─── Performance Mode: Swiping ────────────────────────────────────────────── 
+   * When user is actively swiping, strip all paint-triggering effects from every
+   * element EXCEPT the nav (liquid-nav). This ensures 60fps swipe tracking.
+   * Uses specificity over !important to remain overrideable.
+   * ─────────────────────────────────────────────────────────────────────────── */
   body.is-swiping {
     --glow-primary: 0 0 20px rgba(185, 255, 63, 0.16);
     --glow-secondary: 0 0 18px rgba(126, 247, 255, 0.14);
@@ -361,8 +367,8 @@
 
   body.is-swiping :not(.liquid-nav):not(.liquid-nav *),
   body.is-navigating :not(.liquid-nav):not(.liquid-nav *) {
-    -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     box-shadow: none !important;
     filter: none !important;
     text-shadow: none !important;
@@ -386,6 +392,51 @@
   .swipe-screen {
     scroll-snap-stop: always;
   }
+
+  /* ─── Touch device: ensure tap feedback is instant ──────────────────────────── */
+  @media (hover: none) and (pointer: coarse) {
+    /* Remove grey tap flash that causes perceived lag on Android */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Disable hover transitions that trigger on touch devices causing flicker */
+    button,
+    input,
+    textarea,
+    select,
+    a {
+      transition:
+        color 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+    
+    /* Ensure scroll containers are GPU accelerated */
+    .swipe-viewport,
+    .swipe-screen {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent text selection during fast swipes */
+    .swipe-viewport {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Reduce pulse animation to opacity-only on mobile.
+     * Default Tailwind animate-pulse uses opacity + scale which triggers layout.
+     * Opacity alone is GPU-composited. */
+    .animate-pulse {
+      animation: mobile-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  }
+
+  /* Prevent iOS overscroll rubber-band effect from fighting swipe navigation */
+  html {
+    overscroll-behavior-y: none;
+  }
 }
 
 @layer components {
@@ -398,9 +449,9 @@
     overflow: hidden;
     isolation: isolate;
     transition:
-      background-color 0.35s ease,
-      border-color 0.35s ease,
-      box-shadow 0.4s ease;
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   .theme-card::before {
@@ -418,9 +469,9 @@
     border-radius: var(--radius-md);
     box-shadow: var(--elevation-soft);
     transition:
-      background-color 0.35s ease,
-      border-color 0.35s ease,
-      box-shadow 0.4s ease;
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   .theme-outline-button {
@@ -430,10 +481,10 @@
     color: var(--text);
     box-shadow: var(--elevation-soft);
     transition:
-      background-color 0.35s ease,
-      border-color 0.35s ease,
-      box-shadow 0.4s ease,
-      color 0.35s ease;
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease,
+      color 0.3s ease;
   }
 
   .theme-outline-button:hover {
@@ -450,10 +501,10 @@
     color: var(--text-muted);
     box-shadow: var(--elevation-soft);
     transition:
-      background-color 0.35s ease,
-      border-color 0.35s ease,
-      box-shadow 0.4s ease,
-      color 0.35s ease;
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease,
+      color 0.3s ease;
   }
 
   .theme-icon-button:hover {
@@ -559,6 +610,12 @@
   animation: glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Mobile-safe pulse: opacity only (GPU composited, no layout) */
+@keyframes mobile-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
 /* RMF Section Background */
 .rmf-bg-base {
   background-color: var(--background);
@@ -569,14 +626,42 @@
   background-color: var(--primary);
   opacity: 0.12;
   filter: blur(120px);
-  transform: translateZ(0);
-  will-change: transform;
+  /* Use translate3d instead of will-change+transform for static blobs */
+  transform: translate3d(0, 0, 0);
 }
 
 .rmf-bg-bloom-bottom {
   background-color: var(--primary);
   opacity: 0.08;
   filter: blur(100px);
-  transform: translateZ(0);
-  will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
+
+/* Reduce blur radius on mobile for bloom elements */
+@media (max-width: 768px) {
+  .rmf-bg-bloom-top {
+    filter: blur(60px);
+    opacity: 0.1;
+  }
+  .rmf-bg-bloom-bottom {
+    filter: blur(50px);
+    opacity: 0.07;
+  }
+}
+
+/* ─── AppSwitcher ripple animations ─────────────────────────────────────────── 
+ * Defined here (not inline) so the browser compiles them once at parse time.
+ * ─────────────────────────────────────────────────────────────────────────── */
+@keyframes waterRippleRing {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.1); }
+  15%  { opacity: 0.9; }
+  75%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(5.5); }
+}
+
+@keyframes fillPillClip {
+  0%   { clip-path: circle(0% at 50% 50%); opacity: 0; }
+  15%  { opacity: 1; clip-path: circle(15% at 50% 50%); }
+  100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
+}
+

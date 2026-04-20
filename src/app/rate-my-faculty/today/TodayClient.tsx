@@ -23,7 +23,6 @@ interface TodayRating {
   } | null;
 }
 
-const noiseSvg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`;
 
 export default function TodayClient({ initialRatings }: { initialRatings: any[] }) {
   const router = useRouter();
@@ -58,7 +57,7 @@ export default function TodayClient({ initialRatings }: { initialRatings: any[] 
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--background)] to-[color-mix(in_srgb,var(--primary)_10%,var(--background))]" />
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[100px] bg-[var(--primary)]" />
         <div className="absolute bottom-[10%] right-[-10%] w-[60%] h-[60%] rounded-full opacity-10 blur-[120px] bg-[var(--primary)]" />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
+        {/* noiseSvg removed — feTurbulence SVG is expensive on mobile */}
       </div>
 
       <motion.div 
@@ -69,7 +68,7 @@ export default function TodayClient({ initialRatings }: { initialRatings: any[] 
         <div className="pointer-events-auto flex items-center gap-4">
           <Link 
             href="/rate-my-faculty" 
-            className="flex items-center gap-2 text-on-surface-variant font-medium text-sm hover:text-white transition-colors uppercase tracking-widest bg-white/5 px-4 py-2 rounded-full border border-white/5 backdrop-blur-md"
+            className="flex items-center gap-2 text-on-surface-variant font-medium text-sm hover:text-white transition-colors uppercase tracking-widest bg-white/5 px-4 py-2 rounded-full border border-white/5"
           >
             <ArrowLeft size={16} /> <span className="hidden sm:inline">Back</span>
           </Link>
@@ -90,7 +89,7 @@ export default function TodayClient({ initialRatings }: { initialRatings: any[] 
       </motion.div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 p-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/5 backdrop-blur-sm">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 p-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/5">
           <p className="text-sm">
             <span className="text-[var(--primary)] font-bold">SRMIST Kattankulathur</span> <span className="text-on-surface-variant">· Faculty reviews posted today</span>
           </p>
@@ -117,7 +116,7 @@ export default function TodayClient({ initialRatings }: { initialRatings: any[] 
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
                     key={rating.id}
-                    className="p-6 bg-[var(--surface-elevated)]/40 border border-white/5 rounded-[2rem] backdrop-blur-xl relative overflow-hidden group hover:bg-[var(--surface-elevated)]/60 transition-colors"
+                    className="p-6 bg-[var(--surface-soft)] border border-white/5 rounded-[2rem] relative overflow-hidden group hover:bg-[var(--surface-elevated)] transition-colors"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-baseline gap-2">

@@ -680,19 +680,27 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
           100% { transform: scale(5.5); opacity: 0; }
         }
         @keyframes fcukAliveGradient {
-          0% { transform: translate3d(0, 0, 0); }
-          50% { transform: translate3d(-30%, -30%, 0); }
+          0%   { transform: translate3d(0, 0, 0); }
+          50%  { transform: translate3d(-20%, -20%, 0); }
           100% { transform: translate3d(0, 0, 0); }
         }
         @font-face {
           font-family: 'Evaco';
-          src: url('/font/Evaco-aYvzJ.otf') format('opentype');
+          src: url('/fonts/Evaco-aYvzJ.otf') format('opentype');
           font-weight: normal;
           font-style: normal;
           font-display: swap;
         }
         @media (prefers-reduced-motion: reduce) {
           .fcuk-alive-gradient { animation: none !important; }
+        }
+        /* Reduce animation canvas size on mobile to avoid large paint areas */
+        @media (max-width: 768px) {
+          .fcuk-alive-gradient {
+            width: 150vw !important;
+            height: 150vh !important;
+          }
+          .fcuk-film-grain { display: none !important; }
         }
       `}</style>
 
@@ -755,9 +763,10 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
           />
         </div>
 
-        {/* Film-grain texture (all themes for cinematic texture, NO mixBlendMode lag) */}
+        {/* Film-grain texture — hidden on mobile (expensive SVG filter) */}
         <div
           aria-hidden
+          className="fcuk-film-grain"
           style={{
             position: 'absolute',
             inset: -20,

@@ -67,7 +67,6 @@ const getWittyTagline = (stats: FacultyStats | null, overall: number, count: num
   return 'this prof hits different ✨';
 };
 
-const noiseSvg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`;
 
 export default function FacultyListClient({ 
   initialFaculties, 
@@ -147,7 +146,7 @@ export default function FacultyListClient({
         <div className="absolute inset-0 rmf-bg-base" />
         <div className="absolute top-[5%] left-[-15%] w-[80%] h-[80%] rounded-full rmf-bg-bloom-top" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] rounded-full rmf-bg-bloom-bottom" />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
+        {/* NOTE: noiseSvg removed — feTurbulence SVG filter is expensive on mobile */}
       </div>
 
       <motion.div
@@ -192,7 +191,7 @@ export default function FacultyListClient({
             </h1>
           </div>
 
-          <div className="bg-[var(--surface-elevated)]/60 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl shadow-lg shrink-0 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="bg-[var(--surface-elevated)] border border-white/10 px-4 py-3 rounded-2xl shadow-lg shrink-0 flex flex-col items-center justify-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary-soft)]/20 to-transparent pointer-events-none" />
             <div className="text-2xl sm:text-3xl font-black font-[var(--font-headline)] text-[var(--primary)] drop-shadow-[0_0_10px_color-mix(in_srgb,var(--primary)_60%,transparent)] relative z-10">
               {faculties.length > 0 ? faculties.length : '...'}
@@ -208,7 +207,7 @@ export default function FacultyListClient({
           className="relative mb-6 group"
         >
           <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-r from-[var(--primary)]/20 to-transparent blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-          <div className="relative flex gap-3 bg-[var(--surface)]/50 backdrop-blur-xl border border-white/10 rounded-[2rem] p-2 shadow-lg">
+          <div className="relative flex gap-3 bg-[var(--surface)] border border-white/10 rounded-[2rem] p-2 shadow-lg">
             <div className="flex-1 flex items-center bg-transparent">
               <Search className="ml-4 text-on-surface-variant" size={20} />
               <input
@@ -301,9 +300,9 @@ export default function FacultyListClient({
                     style={{ cursor: 'pointer' }}
                   >
                     <motion.div
-                      whileHover={{ scale: 0.98 }}
-                      whileTap={{ scale: 0.96 }}
-                      className="group relative p-5 bg-[var(--surface)]/60 backdrop-blur-xl border border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+                      whileHover={{ scale: 0.99 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="group relative p-5 bg-[var(--surface-soft)] border border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200"
                     >
                       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ring-1 ring-white/10" />
 

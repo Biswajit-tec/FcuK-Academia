@@ -18,8 +18,8 @@ interface SwipeContainerProps {
   onPreviewPathChange?: (href: string) => void;
 }
 
-const DIRECTION_LOCK_RATIO = 1.1;
-const NAV_TRANSITION_DURATION_MS = 250;
+const DIRECTION_LOCK_RATIO = 1.2;
+const NAV_TRANSITION_DURATION_MS = 280;
 
 function SwipeContainer({ activePath, screens, onNavigate, onPreviewPathChange }: SwipeContainerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -301,8 +301,11 @@ function SwipeContainer({ activePath, screens, onNavigate, onPreviewPathChange }
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
-        willChange: 'transform',
-        transform: 'translate3d(0, 0, 0)',
+        // touch-action: pan-y allows vertical scroll delegation to child screens
+        // while keeping horizontal swipe on the compositor thread (no JS delay)
+        touchAction: 'pan-y pinch-zoom',
+        // Prevent pull-to-refresh from interfering with horizontal swipe
+        overscrollBehaviorX: 'none',
       }}
     >
       {screens.map(({ href, Component }) => (
@@ -315,8 +318,16 @@ function SwipeContainer({ activePath, screens, onNavigate, onPreviewPathChange }
           )}
           style={{
             width: viewportWidth ? `${viewportWidth}px` : '100%',
-            contain: 'layout paint size',
+            // content-visibility:auto lets the browser skip rendering off-screen screens
+            contentVisibility: href !== activePath ? 'auto' : 'visible',
+            containIntrinsicSize: '0 100dvh',
+            contain: 'layout paint style',
+            // Promote each screen to its own GPU layer for smooth swipe tracking
             transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            // Vertical scroll within each screen doesn't block horizontal swipe
+            touchAction: 'pan-y',
           }}
         >
           <Component />

@@ -37,7 +37,6 @@ interface FacultyDetail {
   stats: FacultyStats;
 }
 
-const noiseSvg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`;
 
 function CountUp({ value, duration = 1.5 }: { value: number; duration?: number }) {
   const [count, setCount] = useState(0);
@@ -116,7 +115,7 @@ export default function FacultyDetailClient({
             <CountUp value={val || 0} duration={1} />
           </span>
         </div>
-        <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden backdrop-blur-md border border-white/5 relative">
+        <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
           <motion.div
             initial={{ scaleX: 0, originX: 0 }}
             animate={{ scaleX: percentage / 100 }}
@@ -141,7 +140,7 @@ export default function FacultyDetailClient({
         <div className="absolute inset-0 rmf-bg-base" />
         <div className="absolute top-[5%] left-[-15%] w-[80%] h-[80%] rounded-full rmf-bg-bloom-top" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] rounded-full rmf-bg-bloom-bottom" />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
+        {/* noiseSvg removed — feTurbulence SVG is expensive on mobile */}
       </div>
 
       <motion.div
@@ -172,7 +171,7 @@ export default function FacultyDetailClient({
         <motion.div
           initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="relative bg-[var(--surface)]/60 border border-white/10 rounded-[2rem] p-6 sm:p-8 mb-8 overflow-hidden shadow-xl backdrop-blur-2xl ring-1 ring-white/5"
+          className="relative bg-[var(--surface-soft)] border border-white/10 rounded-[2rem] p-6 sm:p-8 mb-8 overflow-hidden shadow-xl ring-1 ring-white/5"
         >
 
           <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6 md:items-center">
@@ -192,7 +191,7 @@ export default function FacultyDetailClient({
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3 bg-[var(--surface-highlight)]/40 border border-white/10 px-6 py-4 rounded-[2rem] flex-shrink-0 shadow-lg backdrop-blur-md">
+            <div className="flex items-center justify-center gap-3 bg-[var(--surface-highlight)] border border-white/10 px-6 py-4 rounded-[2rem] flex-shrink-0 shadow-lg">
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-2 text-[var(--primary)] mb-1">
                   <span className="text-3xl sm:text-4xl">{getMoodEmoji(initialFaculty.overallRating)}</span>
@@ -210,7 +209,7 @@ export default function FacultyDetailClient({
 
         <motion.div
           initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05, duration: 0.4 }}
-          className="grid gap-x-10 sm:grid-cols-2 bg-[var(--surface)]/30 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-white/5 mb-10 shadow-lg relative overflow-hidden"
+          className="grid gap-x-10 sm:grid-cols-2 bg-[var(--surface-soft)] rounded-[2rem] p-6 sm:p-8 border border-white/5 mb-10 shadow-lg relative overflow-hidden"
         >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-[var(--primary)]/30 to-transparent" />
 
@@ -259,7 +258,7 @@ export default function FacultyDetailClient({
             {optimisticReviews.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="p-10 text-center bg-[var(--surface)]/30 backdrop-blur-md rounded-3xl border border-white/10 border-dashed"
+                className="p-10 text-center bg-[var(--surface-soft)] rounded-3xl border border-white/10 border-dashed"
               >
                 <p className="text-on-surface-variant font-bold">no one has spoken yet... suspicious 👀</p>
               </motion.div>
@@ -268,7 +267,7 @@ export default function FacultyDetailClient({
                 <motion.div
                    key={rev.id}
                   initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i < 10 ? i * 0.1 : 0 }}
-                  className="p-6 bg-[var(--surface)]/40 backdrop-blur-xl rounded-[1.5rem] border border-white/5 shadow-md relative group hover:bg-[var(--surface-elevated)]/60 transition-colors"
+                  className="p-6 bg-[var(--surface-soft)] rounded-[1.5rem] border border-white/5 shadow-md relative group hover:bg-[var(--surface-elevated)] transition-colors"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-[1.5rem] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 

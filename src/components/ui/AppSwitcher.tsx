@@ -195,42 +195,25 @@ export default function AppSwitcher() {
   };
 
   return (
-    <>
-      <style>{`
-        @keyframes waterRippleRing {
-          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.1); }
-          15% { opacity: 0.9; }
-          75% { opacity: 0.9; }
-          100% { opacity: 0; transform: translate(-50%, -50%) scale(5.5); }
-        }
-        
-        @keyframes fillPillClip {
-          0% { clip-path: circle(0% at 50% 50%); opacity: 0; }
-          15% { opacity: 1; clip-path: circle(15% at 50% 50%); }
-          100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
-        }
-      `}</style>
-      
-      <div className="flex w-full gap-3 mb-2">
-        <div className="flex-1 min-w-0 flex">
-          <SwitcherBtn 
-            title="FcuK Academia" 
-            isActive={!isPyqs} 
-            rippleStart={rippleData?.target === 'home' ? rippleData.start : null}
-            onClick={() => handleNav('home', '/')}
-          />
-        </div>
-
-        <div className="flex-1 min-w-0 flex">
-          <SwitcherBtn 
-            title="LOCK IN" 
-            isPyq 
-            isActive={isPyqs} 
-            rippleStart={rippleData?.target === 'pyq' ? rippleData.start : null}
-            onClick={() => handleNav('pyq', pyqLink)}
-          />
-        </div>
+    <div className="flex w-full gap-3 mb-2">
+      <div className="flex-1 min-w-0 flex">
+        <SwitcherBtn 
+          title="FcuK Academia" 
+          isActive={!isPyqs} 
+          rippleStart={rippleData?.target === 'home' ? rippleData.start : null}
+          onClick={() => handleNav('home', '/')}
+        />
       </div>
-    </>
+
+      <div className="flex-1 min-w-0 flex">
+        <SwitcherBtn 
+          title="LOCK IN" 
+          isPyq 
+          isActive={isPyqs} 
+          rippleStart={rippleData?.target === 'pyq' ? rippleData.start : null}
+          onClick={() => handleNav('pyq', pyqLink)}
+        />
+      </div>
+    </div>
   );
 }
