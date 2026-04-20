@@ -108,7 +108,7 @@ export default function AppSwitcher() {
         whileTap={{ scale: 0.98 }}
         onClick={onClick}
         className={cn(
-          "relative flex h-[52px] w-full items-center justify-center rounded-[18px]",
+         "relative flex h-[52px] w-full items-center justify-center rounded-[18px]",
           (isActive || rippleStart !== null) ? "shadow-xl shadow-primary/20" : "p-[1.5px]"
         )}
         style={{
@@ -165,7 +165,7 @@ export default function AppSwitcher() {
              }}
           >
              <span className={cn(
-              "whitespace-nowrap leading-none transition-none", // No CSS transition, the clip-path acts as the transition wipe!
+             "whitespace-nowrap leading-none transition-none", // No CSS transition, the clip-path acts as the transition wipe!
               isPyq ? "uppercase tracking-[0.1em] text-[14px]" : "font-headline text-[18px]",
               activeTextColorClasses
             )} style={{ 
@@ -180,7 +180,7 @@ export default function AppSwitcher() {
 
         {/* Crisp Top Text Layer Base (Fallback & Inactive Base) */}
         <span className={cn(
-          "relative z-10 whitespace-nowrap leading-none transition-none", 
+         "relative z-10 whitespace-nowrap leading-none transition-none", 
           isPyq ? "uppercase tracking-[0.1em] text-[14px]" : "font-headline text-[18px]",
           textColorClasses
         )} style={{ 

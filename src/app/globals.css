@@ -72,6 +72,21 @@
   --page-text-shadow: var(--glow-primary);
 }
 
+/* Mobile-Lite Performance Overrides */
+@media (max-width: 768px) {
+  :root {
+    --overlay-blur: 8px;
+    --glow-primary: 0 0 12px rgba(185, 255, 63, 0.12);
+    --glow-secondary: 0 0 10px rgba(126, 247, 255, 0.1);
+    --glow-accent: 0 0 10px rgba(255, 138, 91, 0.08);
+  }
+
+  * {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+}
+
 @font-face {
   font-family: "Brezo";
   src: url("/fonts/BrezoRegular-PVEgP.ttf") format("truetype");

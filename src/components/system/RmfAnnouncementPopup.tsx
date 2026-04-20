@@ -187,7 +187,7 @@ export default function RmfAnnouncementPopup() {
                 }}
               />
               <div
-                className="absolute w-[200%] aspect-square -top-[50%] -left-[50%] z-0 opacity-10 pointer-events-none mix-blend-overlay animate-[spin_60s_linear_infinite]"
+                className="absolute w-[200%] aspect-square -top-[50%] -left-[50%] z-0 opacity-10 pointer-events-none  animate-[spin_60s_linear_infinite]"
                 style={{
                   backgroundImage: 'radial-gradient(circle at center, transparent 30%, var(--text) 30.5%, var(--text) 31%, transparent 31.5%)',
                   backgroundSize: '10px 10px'

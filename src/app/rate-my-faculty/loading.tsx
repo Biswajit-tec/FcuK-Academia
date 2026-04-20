@@ -11,7 +11,7 @@ export default function FacultyListLoading() {
         <div className="absolute inset-0 rmf-bg-base" />
         <div className="absolute top-[5%] left-[-15%] w-[80%] h-[80%] rounded-full rmf-bg-bloom-top" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] rounded-full rmf-bg-bloom-bottom" />
-        <div className="absolute inset-0 opacity-[0.05] mix-blend-overlay" style={{ backgroundImage: noiseSvg }}></div>
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
       </div>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 mt-4">
         {/* College Section Skeleton */}

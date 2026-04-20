@@ -26,7 +26,7 @@ export default function GlowCard({
   return (
     <div
       className={cn(
-        "theme-card",
+       "theme-card",
         glowClasses[glowColor],
         borderStyle === 'dashed' && 'border-dashed',
         borderStyle === 'dotted' && 'border-dotted',

@@ -119,7 +119,7 @@ export default function HomePage() {
       'Study. Survive. Repeat.',
       'Still Passing?',
       'Stay Cooked!',
-      "Don’t Fail.",
+     "Don’t Fail.",
       'Barely Surviving.',
       'Academically Alive.',
       'Built to Survive.',

@@ -1,7 +1,10 @@
 import React, { Suspense } from 'react';
 import { getFacultyDetails } from '@/lib/server/rmf';
-import FacultyDetailClient from './FacultyDetailClient';
+import dynamic from 'next/dynamic';
 import FacultyDetailLoading from './loading';
+const FacultyDetailClient = dynamic(() => import('./FacultyDetailClient'), {
+  loading: () => <FacultyDetailLoading />
+});
 import { notFound } from 'next/navigation';
 
 // Use the cache from rmf.ts (60s revalidate + tag-based instant purge)

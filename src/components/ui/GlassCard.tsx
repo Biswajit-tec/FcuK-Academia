@@ -13,7 +13,7 @@ export default function GlassCard({ children, className, ...props }: GlassCardPr
   return (
     <div
       className={cn(
-        "theme-card p-5 md:p-7",
+       "theme-card p-5 md:p-7",
         className
       )}
       {...props}

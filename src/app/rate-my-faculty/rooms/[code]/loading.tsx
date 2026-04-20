@@ -7,7 +7,7 @@ export default function RoomLoading() {
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)]">
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div className="absolute inset-0 bg-[var(--background)]" />
-        <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: noiseSvg }}></div>
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
       </div>
 
       <div className="max-w-2xl mx-auto h-screen flex flex-col pt-24 mt-4 px-4 sm:px-6">

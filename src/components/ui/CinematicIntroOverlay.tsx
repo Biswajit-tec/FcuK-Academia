@@ -11,7 +11,11 @@ import {
 } from '@/lib/introConfig';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '@/context/ThemeContext';
-import CinematicIntro from '@/components/ui/CinematicIntro';
+import dynamic from 'next/dynamic';
+const CinematicIntro = dynamic(() => import('@/components/ui/CinematicIntro'), {
+  ssr: false,
+  loading: () => null,
+});
 
 /**
  * Self-activating cinematic intro overlay.

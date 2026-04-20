@@ -58,7 +58,7 @@ const NavItemButton = memo(function NavItemButton({
   const content = (
     <div
       className={cn(
-        'relative z-10 flex h-[3.4rem] w-full items-center justify-center rounded-full transition-colors duration-300',
+        'relative z-10 flex h-full w-full items-center justify-center rounded-full transition-colors duration-300',
         isActive ? 'text-[var(--text)]' : 'text-on-surface-variant opacity-50',
       )}
       style={{
@@ -119,7 +119,7 @@ const NavItemButton = memo(function NavItemButton({
         aria-label={label}
         aria-current={isActive ? 'page' : undefined}
         onClick={() => onNavigate(href)}
-        className="relative flex min-w-0 items-center justify-center bg-transparent outline-none"
+        className="relative flex h-full min-w-0 items-center justify-center bg-transparent outline-none"
         style={{
           WebkitTapHighlightColor: 'transparent',
           WebkitAppearance: 'none',
@@ -136,7 +136,7 @@ const NavItemButton = memo(function NavItemButton({
       href={href}
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
-      className="relative flex min-w-0 items-center justify-center"
+      className="relative flex h-full min-w-0 items-center justify-center"
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {inner}
@@ -204,7 +204,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
           mass: 1,
           restDelta: 0.001 
         }}
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center px-4 sm:px-6 xl:px-8 mx-auto gap-4 sm:gap-4 pointer-events-none"
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center px-4 sm:px-6 xl:px-8 mx-auto gap-4 sm:gap-4 pointer-events-none"
         style={{
           paddingBottom: `calc(16px + max(env(safe-area-inset-bottom), 0px))`,
           willChange: 'transform, opacity',
@@ -218,11 +218,11 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 60, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 25 }}
-            className="liquid-nav pointer-events-auto relative w-[85%] max-w-[28rem] sm:max-w-[32rem]"
+            className="liquid-nav pointer-events-auto relative w-[85%] max-w-[28rem] sm:max-w-[32rem] h-[4rem]"
             aria-label={isRmfRoute ? 'RMF Navigation' : 'Primary'}
           >
             <div
-              className="relative overflow-hidden rounded-full border p-[5px] backdrop-blur-xl"
+              className="relative h-full overflow-hidden rounded-full border p-[4px] backdrop-blur-xl"
               style={{
                 borderColor: 'color-mix(in srgb, var(--border-strong) 40%, rgba(255,255,255,0.1))',
                 background: 'linear-gradient(180deg, color-mix(in srgb, var(--nav-background) 80%, rgba(0,0,0,0.4)) 0%, color-mix(in srgb, var(--surface) 80%, rgba(0,0,0,0.6)) 100%)',
@@ -272,7 +272,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                 </div>
               </motion.div>
 
-              <div className={cn("relative z-10 grid items-center", isRmfRoute ? "grid-cols-4" : "grid-cols-6")}>
+              <div className={cn("relative z-10 grid h-full items-center", isRmfRoute ? "grid-cols-4" : "grid-cols-6")}>
                 {isRmfRoute ? (
                   rmfNavItems.map((tab) => {
                     const active = pathname === tab.href;
@@ -288,7 +288,7 @@ function Navbar({ activePath, onNavigate }: NavbarProps) {
                           }
                         }}
                         className={cn(
-                          "relative h-[3.4rem] w-full flex items-center justify-center rounded-full text-[10px] sm:text-xs font-bold tracking-[0.1em] transition-colors duration-300",
+                         "relative h-full w-full flex items-center justify-center rounded-full text-[10px] sm:text-xs font-bold tracking-[0.1em] transition-colors duration-300",
                           active ? "text-[var(--text)]" : "text-on-surface-variant opacity-50 hover:opacity-80"
                         )}
                       >

@@ -34,7 +34,7 @@ export default function Button({
       whileHover={motionProps.whileHover}
       transition={motionProps.transition}
       className={cn(
-        "inline-flex items-center justify-center transition-transform",
+       "inline-flex items-center justify-center transition-transform",
         variants[variant],
         fullWidth && "w-full",
         className

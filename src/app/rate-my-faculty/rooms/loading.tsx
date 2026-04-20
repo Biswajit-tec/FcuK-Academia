@@ -7,7 +7,7 @@ export default function RmfRoomsLoading() {
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)] flex flex-col">
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div className="absolute inset-0 bg-[var(--background)]" />
-        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: noiseSvg }}></div>
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
       </div>
 
       <div className="flex-1 flex items-center justify-center -mt-20">
