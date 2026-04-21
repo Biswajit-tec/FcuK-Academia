@@ -6,6 +6,7 @@ import {
   NOTIFICATIONS_FCM_SW_PATH,
   NOTIFICATIONS_FCM_SW_SCOPE,
 } from '@/lib/notifications/constants';
+import { getWebPushSupportStatus } from '@/lib/notifications/platform';
 import {
   clearSessionSyncedFcmToken,
   clearStoredFcmToken,
@@ -20,13 +21,10 @@ let messagingServiceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration
 let notificationInitializationPromise: Promise<string | null> | null = null;
 
 function supportsPushNotifications() {
-  return typeof window !== 'undefined'
-    && 'Notification' in window
-    && 'serviceWorker' in navigator
-    && 'PushManager' in window;
+  return getWebPushSupportStatus() === 'supported';
 }
 
-function createMessagingServiceWorkerUrl() {
+export function getMessagingServiceWorkerUrl() {
   const url = new URL(NOTIFICATIONS_FCM_SW_PATH, window.location.origin);
   const config = getFirebasePublicConfig();
 
@@ -45,7 +43,7 @@ export async function getFirebaseMessagingServiceWorkerRegistration() {
   if (!messagingServiceWorkerRegistrationPromise) {
     messagingServiceWorkerRegistrationPromise = (async () => {
       try {
-        const swUrl = createMessagingServiceWorkerUrl();
+        const swUrl = getMessagingServiceWorkerUrl();
         console.log('[FCM] Registering SW at:', swUrl);
 
         const reg = await navigator.serviceWorker.register(swUrl, {
@@ -169,8 +167,14 @@ export async function getNotificationToken(options?: { forceRefresh?: boolean })
     return existingToken;
   }
 
-  const permission = await requestNotificationPermission();
+  const permission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+  setStoredNotificationPermission(permission);
   if (permission !== 'granted') {
+    if (existingToken) {
+      await removeNotificationToken(existingToken);
+      clearStoredFcmToken();
+      clearSessionSyncedFcmToken();
+    }
     return null;
   }
 
@@ -244,15 +248,10 @@ export async function clearNotificationToken() {
 
   try {
     const messaging = await getFirebaseMessagingClient();
-    const registration = await getFirebaseMessagingServiceWorkerRegistration();
 
     if (messaging) {
       const { deleteToken } = await import('firebase/messaging');
       await deleteToken(messaging);
-    }
-
-    if (registration) {
-      await registration.unregister();
     }
   } catch {
     // Ignore errors and continue with local cleanup.

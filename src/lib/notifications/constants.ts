@@ -5,6 +5,7 @@ export const NOTIFICATIONS_PERMISSION_KEY = 'fcuk.notifications.permission';
 export const NOTIFICATIONS_FCM_TOKEN_KEY = 'fcuk.notifications.fcmToken';
 export const NOTIFICATIONS_FCM_SESSION_SYNC_KEY = 'fcuk.notifications.fcmToken.sessionSynced';
 export const NOTIFICATIONS_MARKS_SNAPSHOT_KEY = 'fcuk.notifications.marksSnapshot';
+export const NOTIFICATIONS_INSTALL_PROMPT_DISMISSED_KEY = 'fcuk.installPrompt.dismissed';
 export const NOTIFICATIONS_DEDUP_PREFIX = 'notified';
 // IMPORTANT: scope must be '/' so the SW controls all pages and can receive
 // push events regardless of which route the user is on. A narrower scope (e.g.
@@ -17,11 +18,11 @@ export const NOTIFICATIONS_DEFAULT_DURATION_MS = 5200;
 export const NOTIFICATIONS_STACK_LIMIT = 4;
 
 export const NOTIFICATION_SOUND_PATHS: Record<NotificationType | 'default', string> = {
-  good: '/sounds/good.mp3',
-  bad: '/sounds/bad.mp3',
-  warning: '/sounds/warning.mp3',
-  class: '/sounds/class.mp3',
-  broadcast: '/sounds/good.mp3',
-  system: '/sounds/warning.mp3',
-  default: '/sounds/good.mp3',
+  good: '/sounds/cinematic-reveal.mp3',
+  bad: '/sounds/cinematic-strike.mp3',
+  warning: '/sounds/cinematic-woosh.mp3',
+  class: '/sounds/cinematic-ambient.mp3',
+  broadcast: '/sounds/cinematic-reveal.mp3',
+  system: '/sounds/cinematic-outro.mp3',
+  default: '/sounds/cinematic-reveal.mp3',
 };

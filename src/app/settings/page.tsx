@@ -179,7 +179,7 @@ export default function SettingsPage() {
             <ToggleRow
               icon={Bell}
               title="notifications"
-              subtitle={notificationSubtitle}
+              subtitle={null}
               checked={notificationsEnabled}
               statusLabel={notificationStatusLabel}
               onChange={() => {
@@ -439,7 +439,7 @@ function ToggleRow({
 }: {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   title: string;
-  subtitle: string;
+  subtitle: string | null;
   checked: boolean;
   statusLabel?: string;
   onChange: () => void;
@@ -452,10 +452,13 @@ function ToggleRow({
       whileHover={motionProps.whileHover}
       whileTap={motionProps.whileTap}
       transition={motionProps.transition}
-      className="flex w-full items-start justify-between gap-4 rounded-[var(--radius-md)] border p-4 text-left"
+      className={cn(
+        "flex w-full justify-between gap-4 rounded-[var(--radius-md)] border p-4 text-left",
+        subtitle ? "items-start" : "items-center"
+      )}
       style={{ borderColor: 'var(--card-border)', background: 'color-mix(in srgb, var(--surface-soft) 90%, transparent)' }}
     >
-      <div className="flex min-w-0 items-start gap-4">
+      <div className={cn("flex min-w-0 gap-4", subtitle ? "items-start" : "items-center")}>
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border text-secondary"
           style={{
@@ -467,7 +470,7 @@ function ToggleRow({
         </div>
         <div className="min-w-0">
           <h3 className="font-headline text-lg font-bold text-on-surface">{title}</h3>
-          <p className="mt-1 text-[13px] leading-5 text-on-surface-variant">{subtitle}</p>
+          {subtitle && <p className="mt-1 text-[13px] leading-5 text-on-surface-variant">{subtitle}</p>}
         </div>
       </div>
 
@@ -525,7 +528,7 @@ function SyncRow({
       whileTap={syncing ? undefined : motionProps.whileTap}
       transition={motionProps.transition}
       disabled={syncing}
-      className="flex w-full items-center justify-between gap-4 rounded-[var(--radius-md)] border px-4 py-3.5 text-left disabled:cursor-not-allowed disabled:opacity-90"
+      className="flex w-full items-center justify-between gap-4 rounded-[var(--radius-md)] border px-4 py-4 text-left disabled:cursor-not-allowed disabled:opacity-90"
       style={{ borderColor: 'var(--card-border)', background: 'color-mix(in srgb, var(--surface-soft) 90%, transparent)' }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-4">
@@ -540,9 +543,6 @@ function SyncRow({
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-headline text-lg font-bold text-on-surface">sync</h3>
-          <p className="mt-1 text-[13px] leading-5 text-on-surface-variant">
-            Refresh attendance, timetable, calendar, and session data.
-          </p>
         </div>
       </div>
 

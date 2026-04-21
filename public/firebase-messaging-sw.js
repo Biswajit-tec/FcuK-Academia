@@ -1,21 +1,20 @@
-/**
- * Firebase Cloud Messaging Service Worker
- *
- * SCOPE: '/' — must control all pages so push events are received regardless
- * of which route the user is on. Do NOT narrow the scope.
- *
- * Firebase config is passed as URL query params when the SW is registered
- * (see getToken.ts → createMessagingServiceWorkerUrl).
- * Fallback: reads from self.FIREBASE_CONFIG injected by the app if available.
- */
-
 const FIREBASE_VERSION = '12.12.0';
+const CACHE_VERSION = 'fcuk-academia-v6';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
+const OFFLINE_URL = '/offline.html';
+const APP_ICON = '/icons/android-icon-192.png';
+const APP_BADGE = '/icons/android-icon-192.png';
+const PRECACHE_URLS = [
+  OFFLINE_URL,
+  '/manifest.json',
+  '/favicon.ico',
+  '/icons/android-icon-192.png',
+  '/icons/android-icon-512.png',
+  '/maskable-icon-512x512.png',
+];
 
-// ─── Config ─────────────────────────────────────────────────────────────────
-// Primary: query params passed at registration time (survives across SW updates).
-// These are set on self.location.href when the SW is first registered.
 const configUrl = new URL(self.location.href);
-
 const firebaseConfig = {
   apiKey: configUrl.searchParams.get('apiKey') || '',
   authDomain: configUrl.searchParams.get('authDomain') || '',
@@ -23,38 +22,71 @@ const firebaseConfig = {
   messagingSenderId: configUrl.searchParams.get('messagingSenderId') || '',
   appId: configUrl.searchParams.get('appId') || '',
 };
+const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey
+  && firebaseConfig.projectId
+  && firebaseConfig.messagingSenderId
+  && firebaseConfig.appId,
+);
 
-const isConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+function normalizeUrlCandidate(value) {
+  if (!value || typeof value !== 'string') return '/';
 
-// ─── Notification helper ─────────────────────────────────────────────────────
-function buildNotificationOptions(payload) {
-  const data = payload?.data || {};
-  const notification = payload?.notification || {};
+  try {
+    const url = new URL(value, self.location.origin);
+    if (url.origin !== self.location.origin) {
+      return '/';
+    }
+    return url.toString();
+  } catch {
+    return '/';
+  }
+}
 
-  const title = data.title || notification.title || 'FcuK Academia';
-  const body = data.message || notification.body || 'new academic chaos just dropped';
-  const type = data.type || 'broadcast';
-  const deepLink = data.deepLink || '/';
+function readPayloadData(payload) {
+  const data = payload && typeof payload === 'object' ? payload.data || {} : {};
+  const notification = payload && typeof payload === 'object' ? payload.notification || {} : {};
+  const url = normalizeUrlCandidate(
+    data.url
+      || data.deepLink
+      || notification.click_action
+      || payload?.fcmOptions?.link
+      || '/',
+  );
 
   return {
-    title,
+    title: data.title || notification.title || 'FcuK Academia',
+    body: data.body || data.message || notification.body || 'New academic chaos just dropped.',
+    icon: data.icon || notification.icon || APP_ICON,
+    badge: data.badge || notification.badge || APP_BADGE,
+    image: data.image || notification.image,
+    tag: data.tag || `fcuk-${data.type || 'broadcast'}-${data.id || Date.now()}`,
+    type: data.type || 'broadcast',
+    sound: data.sound || 'default',
+    url,
+  };
+}
+
+function buildNotificationOptions(payload) {
+  const parsed = readPayloadData(payload);
+
+  return {
+    title: parsed.title,
     options: {
-      body,
-      icon: '/icons/android-icon-192.png',
-      badge: '/icons/android-icon-192.png',
-      // Use a stable tag scoped to this app to avoid clearing unrelated OS notifications.
-      tag: `fcuk-${type}-${data.id || Date.now()}`,
-      // renotify: true ensures the notification fires even if same tag is active.
+      body: parsed.body,
+      icon: parsed.icon,
+      badge: parsed.badge,
+      image: parsed.image,
+      tag: parsed.tag,
+      requireInteraction: false,
       renotify: true,
       data: {
-        deepLink,
-        sound: data.sound || 'default',
-        type,
+        url: parsed.url,
+        deepLink: parsed.url,
+        sound: parsed.sound,
+        type: parsed.type,
       },
-      // Android: vibration pattern is respected by Chrome on Android.
-      vibrate: type === 'bad' ? [120, 60, 120] : [80],
-      // requireInteraction keeps the notification visible until tapped (Android only).
-      requireInteraction: false,
+      vibrate: parsed.type === 'bad' ? [120, 60, 120] : [80],
     },
   };
 }
@@ -64,102 +96,164 @@ function showNotificationFromPayload(payload) {
   return self.registration.showNotification(title, options);
 }
 
-// ─── SW lifecycle ────────────────────────────────────────────────────────────
-// Take control immediately so push events are handled without a page reload.
+async function focusOrOpenClient(targetUrl) {
+  const resolvedUrl = normalizeUrlCandidate(targetUrl);
+  const clientList = await self.clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true,
+  });
+
+  const exactClient = clientList.find((client) => client.url === resolvedUrl);
+  if (exactClient) {
+    if ('focus' in exactClient) {
+      await exactClient.focus();
+    }
+    if ('navigate' in exactClient) {
+      await exactClient.navigate(resolvedUrl);
+    }
+    return;
+  }
+
+  const sameOriginClient = clientList.find((client) => new URL(client.url).origin === self.location.origin);
+  if (sameOriginClient) {
+    if ('focus' in sameOriginClient) {
+      await sameOriginClient.focus();
+    }
+    if ('navigate' in sameOriginClient) {
+      await sameOriginClient.navigate(resolvedUrl);
+    }
+    return;
+  }
+
+  if (self.clients.openWindow) {
+    await self.clients.openWindow(resolvedUrl);
+  }
+}
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(OFFLINE_CACHE);
+    await cache.addAll(PRECACHE_URLS);
+  })());
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    await Promise.all(
+      cacheNames
+        .filter((name) => ![STATIC_CACHE, OFFLINE_CACHE].includes(name))
+        .map((name) => caches.delete(name)),
+    );
+    await self.clients.claim();
+  })());
 });
 
-// ─── Firebase init ────────────────────────────────────────────────────────────
-if (isConfigured) {
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+  if (url.searchParams.has('_rsc')) return;
+
+  const nextHeaders = ['RSC', 'Next-Router-State-Tree', 'Next-Router-Prefetch', 'Next-Url'];
+  for (const header of nextHeaders) {
+    if (request.headers.get(header)) return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const cache = await caches.open(OFFLINE_CACHE);
+        return (await cache.match(OFFLINE_URL)) || Response.error();
+      }),
+    );
+    return;
+  }
+
+  const isFont = /\.(woff2?|ttf|otf)$/i.test(url.pathname);
+  const isImage = request.destination === 'image';
+
+  if (!isFont && !isImage) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+    const cachedResponse = await cache.match(request);
+
+    const networkFetch = fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          cache.put(request, response.clone());
+        }
+        return response;
+      })
+      .catch(() => cachedResponse);
+
+    return cachedResponse || networkFetch;
+  })());
+});
+
+if (isFirebaseConfigured) {
   importScripts(
     `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app-compat.js`,
-  );
-  importScripts(
     `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-messaging-compat.js`,
   );
 
   firebase.initializeApp(firebaseConfig);
   const messaging = firebase.messaging();
 
-  /**
-   * Background message handler.
-   *
-   * Called when the app is:
-   * - Closed
-   * - Backgrounded (not in focus)
-   *
-   * FCM automatically suppresses the default notification and calls this handler
-   * when the SW intercepts a push event. We call showNotification() ourselves
-   * to give full control over the notification appearance.
-   *
-   * NOTE: Do NOT close all notifications here — that clears unrelated OS
-   * notifications. Use a stable, app-scoped tag instead (handled in buildNotificationOptions).
-   */
   messaging.onBackgroundMessage((payload) => {
-    console.log('[FCM SW] Background message received:', payload);
+    const hasBrowserManagedNotification = Boolean(
+      payload?.notification?.title || payload?.notification?.body,
+    );
+
+    if (hasBrowserManagedNotification) {
+      return Promise.resolve();
+    }
+
     return showNotificationFromPayload(payload);
   });
 }
 
-// ─── Notification click handler ───────────────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const deepLink = new URL(
-    event.notification.data?.deepLink || '/',
-    self.location.origin,
-  ).toString();
-
-  event.waitUntil(
-    (async () => {
-      // Try to focus an existing window first.
-      const clientList = await clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true,
-      });
-
-      for (const client of clientList) {
-        // Found an open window → focus it and navigate.
-        if ('focus' in client) {
-          await client.focus();
-          client.postMessage({
-            type: 'notification:click',
-            deepLink,
-          });
-          if ('navigate' in client && deepLink) {
-            await client.navigate(deepLink);
-          }
-          return;
-        }
-      }
-
-      // No open window → open a new one.
-      if (clients.openWindow) {
-        await clients.openWindow(deepLink);
-      }
-    })(),
+  const notificationData = event.notification.data || {};
+  const fcmMessage = notificationData.FCM_MSG || {};
+  const targetUrl = normalizeUrlCandidate(
+    notificationData.url
+      || notificationData.deepLink
+      || fcmMessage?.fcmOptions?.link
+      || fcmMessage?.data?.url
+      || fcmMessage?.data?.deepLink
+      || '/',
   );
+
+  event.waitUntil(focusOrOpenClient(targetUrl));
 });
 
-// ─── Push event fallback ───────────────────────────────────────────────────────
-// Handles raw push events in case Firebase compat SDK doesn't intercept them
-// (e.g., when Firebase is misconfigured or payload format differs).
 self.addEventListener('push', (event) => {
-  // Firebase compat SDK should handle this via onBackgroundMessage.
-  // This is a safety net for malformed or non-FCM pushes.
-  if (!isConfigured) {
-    let payload = {};
-    try {
-      payload = event.data?.json() || {};
-    } catch {
-      payload = { notification: { title: 'FcuK Academia', body: event.data?.text() || '' } };
-    }
-
-    event.waitUntil(showNotificationFromPayload(payload));
+  if (isFirebaseConfigured) {
+    return;
   }
+
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = {
+      notification: {
+        title: 'FcuK Academia',
+        body: event.data.text() || '',
+      },
+    };
+  }
+
+  event.waitUntil(showNotificationFromPayload(payload));
 });
