@@ -7,13 +7,14 @@ export default function FacultyListLoading() {
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)] overflow-x-hidden">
       
       {/* Global Background Fix - matches FacultyDetailClient exactly */}
-      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none z-[0] overflow-hidden">
         <div className="absolute inset-0 rmf-bg-base" />
         <div className="absolute top-[5%] left-[-15%] w-[80%] h-[80%] rounded-full rmf-bg-bloom-top" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] rounded-full rmf-bg-bloom-bottom" />
         <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: noiseSvg }}></div>
       </div>
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 mt-4">
+      <div className="relative z-10">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 mt-4">
         {/* College Section Skeleton */}
         <div className="flex justify-between items-end gap-4 mb-8">
           <div className="flex-1 space-y-4">
@@ -41,6 +42,7 @@ export default function FacultyListLoading() {
               <div className="h-4 w-1/4 rounded-lg bg-[var(--surface-highlight)] opacity-50" />
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>

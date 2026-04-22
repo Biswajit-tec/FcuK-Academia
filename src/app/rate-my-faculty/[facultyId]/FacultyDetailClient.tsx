@@ -136,18 +136,19 @@ export default function FacultyDetailClient({
   return (
     <div className="min-h-screen relative pb-32 text-[var(--text)] font-[var(--font-body)] overflow-x-hidden">
 
-      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none z-[0] overflow-hidden">
         <div className="absolute inset-0 rmf-bg-base" />
         <div className="absolute top-[5%] left-[-15%] w-[80%] h-[80%] rounded-full rmf-bg-bloom-top" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] rounded-full rmf-bg-bloom-bottom" />
         {/* noiseSvg removed — feTurbulence SVG is expensive on mobile */}
       </div>
 
-      <motion.div
-        initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="sticky top-0 z-40 px-4 sm:px-6 py-4 flex items-center justify-between pointer-events-none"
-      >
+      <div className="relative z-10">
+        <motion.div
+          initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="sticky top-0 z-40 px-4 sm:px-6 py-4 flex items-center justify-between pointer-events-none"
+        >
         <div className="pointer-events-auto flex items-center gap-4">
           <Link
             href="/rate-my-faculty"
@@ -295,6 +296,7 @@ export default function FacultyDetailClient({
           onSuccess={handleReviewSuccess}
         />
 
+        </div>
       </div>
     </div>
   );
