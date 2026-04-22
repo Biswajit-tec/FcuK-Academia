@@ -25,20 +25,17 @@ const CinematicIntro = dynamic(() => import('@/components/ui/CinematicIntro'), {
  * user sees a different colour each time they reopen the app.
  */
 export default function CinematicIntroOverlay() {
-  const { showIntro } = useTheme();
+  const { cinematicQueued } = useTheme();
   const variantIndex = useMemo(() => getVariantIndex(), []);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // If the splash screen is still visible, don't show cinematic yet.
-    if (showIntro) return;
-
-    // Trigger immediately when showIntro turns false.
-    // This allows the Cinematic background to start showing while the Logo slides up.
-    if (ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
+    // Trigger only when cinematicQueued becomes true.
+    // This happens after IntroOverlay (Logo) or CommunityPopup finishes.
+    if (cinematicQueued && ENABLE_INTRO_SEQUENCE && shouldShowCinematic()) {
       setShow(true);
     }
-  }, [showIntro]);
+  }, [cinematicQueued]);
 
   if (!show) return null;
 

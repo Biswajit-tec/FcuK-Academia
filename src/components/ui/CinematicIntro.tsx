@@ -561,16 +561,22 @@ export default function CinematicIntro({ theme, onComplete }: CinematicIntroProp
   const stopAllAudio = useCallback(() => {
     // 1. Stop persistent ambient
     if (ambientRef.current) {
-      const amb = ambientRef.current;
-      amb.pause();
-      amb.src = '';
-      amb.load();
+      try {
+        const amb = ambientRef.current;
+        amb.muted = true;
+        amb.volume = 0;
+        amb.pause();
+        amb.src = '';
+        amb.load();
+      } catch (e) { /* ignore */ }
       ambientRef.current = null;
     }
 
     // 2. Stop all ad-hoc sound effects in the registry
     soundsRegistry.current.forEach((audio) => {
       try {
+        audio.muted = true;
+        audio.volume = 0;
         audio.pause();
         audio.src = '';
         audio.load();

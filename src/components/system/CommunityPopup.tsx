@@ -55,7 +55,7 @@ function isDevPreviewMode() {
 }
 
 export default function CommunityPopup() {
-  const { showIntro, markCommunityDone, themeConfig } = useTheme();
+  const { showIntro, markCommunityDone, queueCinematic, themeConfig } = useTheme();
   const motionProps = getInteractiveMotion(themeConfig.motion);
   const [open, setOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -65,7 +65,13 @@ export default function CommunityPopup() {
   const portalTarget = typeof document === 'undefined' ? null : document.body;
 
   useEffect(() => {
-    if (!FEATURES.WHATSAPP_COMMUNITY_POPUP || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
+
+    if (!FEATURES.WHATSAPP_COMMUNITY_POPUP) {
+      markCommunityDone();
+      return;
+    }
+
     if (showIntro) return;
     if (hasOpenedRef.current) return;
 
@@ -273,6 +279,7 @@ export default function CommunityPopup() {
                     window.open(WHATSAPP_COMMUNITY_POPUP_CONFIG.whatsappUrl, '_blank', 'noopener,noreferrer');
                     setOpen(false);
                     markCommunityDone();
+                    queueCinematic();
                   }}
                 >
                   join on whatsapp →
@@ -294,7 +301,7 @@ export default function CommunityPopup() {
                     appearance: 'none',
                     WebkitTapHighlightColor: 'transparent',
                   }}
-                  onClick={() => { setOpen(false); markCommunityDone(); }}
+                  onClick={() => { setOpen(false); markCommunityDone(); queueCinematic(); }}
                 >
                   maybe later
                 </motion.button>
