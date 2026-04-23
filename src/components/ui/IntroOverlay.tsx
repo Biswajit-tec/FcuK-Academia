@@ -2,7 +2,7 @@
 
 import Lottie from 'lottie-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import animationData from '@/assets/Scene-2.json';
 import { useTheme } from '@/context/ThemeContext';
@@ -19,9 +19,22 @@ const EXIT_EASING = [0.22, 1, 0.36, 1] as const;
 export default function IntroOverlay() {
   const { showIntro, dismissIntro, queueCinematic, communityPopupDone } = useTheme();
   const { loading } = useDashboard();
+  const [canRenderLottie, setCanRenderLottie] = useState(false);
   const hasDismissedRef = useRef(false);
   const startTimeRef = useRef(Date.now());
   const animationCompleteRef = useRef(false);
+
+  // Delay Lottie rendering until after initial mount and a brief buffer
+  useEffect(() => {
+    if (!showIntro) return;
+    
+    // 150ms is usually enough to clear the hydration/initial-paint CPU spike
+    const timer = setTimeout(() => {
+      setCanRenderLottie(true);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [showIntro]);
 
   // Synchronize dismissal with data loading
   useEffect(() => {
@@ -78,14 +91,21 @@ export default function IntroOverlay() {
             }
           }}
         >
-          <div className="flex w-full max-w-[18rem] items-center justify-center sm:max-w-[20rem]">
-            <Lottie
-              animationData={animationData}
-              loop={false}
-              autoplay
-              onComplete={handleFinish}
-              className="h-auto w-full max-w-[16rem] sm:max-w-[18rem]"
-            />
+          <div className="flex min-h-[16rem] w-full max-w-[18rem] items-center justify-center sm:max-w-[20rem]">
+            {canRenderLottie && (
+              <Lottie
+                animationData={animationData}
+                loop={false}
+                autoplay
+                onComplete={handleFinish}
+                className="h-auto w-full max-w-[16rem] sm:max-w-[18rem]"
+                rendererSettings={{
+                  preserveAspectRatio: 'xMidYMid grow',
+                  progressiveLoad: true,
+                  hideOnTransparent: true,
+                }}
+              />
+            )}
           </div>
         </motion.div>
       ) : null}

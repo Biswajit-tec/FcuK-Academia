@@ -117,12 +117,17 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     if (autoSyncStartedRef.current) return;
     autoSyncStartedRef.current = true;
 
-    if (cachedDashboard) {
-      void loadDashboard({ forceRefresh: true, preserveLoading: true });
-      return;
-    }
+    // Large delay to ensure the intro animation is well underway before background CPU spikes
+    const delayTimer = setTimeout(() => {
+      if (cachedDashboard) {
+        void loadDashboard({ forceRefresh: true, preserveLoading: true });
+        return;
+      }
 
-    void loadDashboard({ forceRefresh: false, preserveLoading: false });
+      void loadDashboard({ forceRefresh: false, preserveLoading: false });
+    }, 1000);
+
+    return () => clearTimeout(delayTimer);
   }, [cachedDashboard, loadDashboard, pathname]);
 
   return (
